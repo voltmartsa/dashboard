@@ -1,7 +1,6 @@
 // Prisma schema for the personal dashboard.
-// SQLite has no native enum type, so area/status/priority/frequency are
-// plain strings; the allowed values are enforced in TypeScript (see
-// src/types/index.ts) rather than in the schema.
+// area/status/priority/frequency are plain strings rather than native Postgres
+// enums, so the allowed values live in one place: src/types/index.ts.
 
 generator client {
   provider = "prisma-client"
@@ -9,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Task {
