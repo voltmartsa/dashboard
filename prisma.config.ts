@@ -3,6 +3,17 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+if (!process.env.DATABASE_URL) {
+  // Don't throw — `prisma generate` legitimately runs without a database
+  // (e.g. postinstall on a fresh clone). But migrate/db commands will fail,
+  // so make the fix obvious in CI/build logs.
+  console.warn(
+    "[prisma.config] DATABASE_URL is not set. `prisma migrate deploy` will fail. " +
+      "On Vercel: Settings → Environment Variables → add DATABASE_URL " +
+      "(enable it for Production AND Preview), then redeploy.",
+  );
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
