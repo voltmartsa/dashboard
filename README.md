@@ -73,7 +73,7 @@ Everything lives in your Postgres database. Nothing is sent anywhere except: the
 1. Push the repo to GitHub (or GitLab/Bitbucket) and import it in [Vercel](https://vercel.com/new) — it auto-detects Next.js, no config needed.
 2. Add a Postgres database from the **Storage** tab (Vercel Postgres/Neon) — this sets `DATABASE_URL` for you automatically. If you're using an external Postgres instead, add `DATABASE_URL` yourself under **Settings → Environment Variables**.
 3. Add the rest of the environment variables from your local `.env` (`ANTHROPIC_API_KEY`, `AUTH_SECRET`, `AUTH_PASSWORD_HASH`, `SMTP_*`, `TWILIO_*`, `CRON_SECRET`).
-4. Deploy. The build runs `prisma migrate deploy` automatically (chained into `postinstall`), so your schema is applied on every deploy — no manual migration step.
+4. Deploy. The build command runs `prisma migrate deploy` before `next build`, so your schema is applied on every deploy — no manual migration step. If the build fails with "The datasource.url property is required", it means `DATABASE_URL` is missing from **Settings → Environment Variables** for that environment (Production/Preview) — add it and redeploy.
 5. That's it for cron — `vercel.json` already declares both schedules (daily at 8am, weekly Monday 8am), and Vercel authenticates them against `CRON_SECRET` automatically (as an `Authorization: Bearer` header), which `src/lib/notifications/cron-auth.ts` checks.
 
 `server.js` and `start:passenger` in `package.json` are for the cPanel path below — Vercel ignores both and runs the app through its own runtime.
