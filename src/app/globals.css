@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0f1ec;
+  --card: #ffffff;
+  --foreground: #14171a;
+  --muted-foreground: #6b7280;
+  --border: #e7e8e3;
+
+  --primary: #0d6b4c;
+  --primary-hover: #0a5a40;
+  --primary-foreground: #ffffff;
+  --primary-soft: #e7f5ee;
+
+  --accent-dark: #0b3d2c;
+  --accent-dark-2: #123f2d;
+  --chart-secondary: #34a373;
+
+  --danger: #dc2626;
+  --warning: #d97706;
+
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+}
+
+/* Personal area gets a purple accent instead of the default Business emerald. */
+[data-area="personal"] {
+  --primary: #6d28d9;
+  --primary-hover: #5b21b6;
+  --primary-foreground: #ffffff;
+  --primary-soft: #f3e8ff;
+
+  --accent-dark: #3b0764;
+  --accent-dark-2: #4c1d95;
+  --chart-secondary: #a855f7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-dark-2: var(--accent-dark-2);
+
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: var(--primary-soft);
+  color: var(--accent-dark);
+}
+
+/* Minimal markdown preview styling for the notes editor (no typography plugin). */
+.prose-note h1 { font-size: 1.5rem; font-weight: 600; margin: 1.2em 0 0.4em; }
+.prose-note h2 { font-size: 1.25rem; font-weight: 600; margin: 1.1em 0 0.4em; }
+.prose-note h3 { font-size: 1.1rem; font-weight: 600; margin: 1em 0 0.4em; }
+.prose-note p { margin: 0.6em 0; }
+.prose-note ul { list-style: disc; padding-left: 1.4em; margin: 0.6em 0; }
+.prose-note ol { list-style: decimal; padding-left: 1.4em; margin: 0.6em 0; }
+.prose-note li { margin: 0.2em 0; }
+.prose-note a { color: var(--primary); text-decoration: underline; }
+.prose-note code { background: var(--primary-soft); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; }
+.prose-note pre { background: var(--primary-soft); border-radius: 10px; padding: 0.8em 1em; overflow-x: auto; }
+.prose-note pre code { background: none; padding: 0; }
+.prose-note blockquote { border-left: 3px solid var(--border); padding-left: 0.9em; color: var(--muted-foreground); margin: 0.6em 0; }
+.prose-note strong { font-weight: 600; }
+
+/* Diagonal-hatch pattern used for "empty"/unfilled chart segments,
+   matching the reference dashboard's donut + bar chart style. */
+.hatch-pattern {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--border) 0,
+    var(--border) 1px,
+    transparent 1px,
+    transparent 6px
+  );
+}
