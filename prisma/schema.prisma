@@ -11,6 +11,29 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("USER") // "SUPER_ADMIN" | "USER"
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedTasks             Task[]                 @relation("TaskOwner")
+  assignedTasks          Task[]                 @relation("TaskAssignee")
+  taskCollaborations     TaskCollaborator[]
+  ownedProjects          Project[]              @relation("ProjectOwner")
+  projectCollaborations  ProjectCollaborator[]
+  notes                  Note[]
+  habits                 Habit[]
+  documents              Document[]
+  timezoneEntries        TimezoneEntry[]
+  weatherLocations       WeatherLocation[]
+  notificationRecipients NotificationRecipient[]
+}
+
 model Task {
   id          String    @id @default(cuid())
   title       String
@@ -21,6 +44,14 @@ model Task {
   dueDate     DateTime?
   order       Int       @default(0)
   aiGenerated Boolean   @default(false)
+
+  ownerId String?
+  owner   User?   @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  assigneeId String?
+  assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  collaborators TaskCollaborator[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -39,6 +70,19 @@ model Task {
   @@index([projectId])
   @@index([parentTaskId])
   @@index([dueDate])
+  @@index([ownerId])
+  @@index([assigneeId])
+}
+
+model TaskCollaborator {
+  id      String   @id @default(cuid())
+  taskId  String
+  task    Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+
+  @@unique([taskId, userId])
 }
 
 model Project {
@@ -51,6 +95,11 @@ model Project {
   dueDate     DateTime?
   order       Int       @default(0)
 
+  ownerId String?
+  owner   User?   @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  collaborators ProjectCollaborator[]
+
   tasks Task[]
   notes Note[]
 
@@ -58,6 +107,18 @@ model Project {
   updatedAt DateTime @updatedAt
 
   @@index([area, status])
+  @@index([ownerId])
+}
+
+model ProjectCollaborator {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedAt   DateTime @default(now())
+
+  @@unique([projectId, userId])
 }
 
 model Note {
@@ -67,6 +128,9 @@ model Note {
   area    String // "BUSINESS" | "PERSONAL"
   tags    String? // comma-separated
   pinned  Boolean @default(false)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -78,6 +142,7 @@ model Note {
   updatedAt DateTime @updatedAt
 
   @@index([area])
+  @@index([ownerId])
 }
 
 model Habit {
@@ -91,12 +156,16 @@ model Habit {
   active            Boolean @default(true)
   order             Int     @default(0)
 
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   logs HabitLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([area, active])
+  @@index([ownerId])
 }
 
 model HabitLog {
@@ -122,11 +191,15 @@ model Document {
   expiryDate     DateTime?
   notes          String?
 
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([area])
   @@index([expiryDate])
+  @@index([ownerId])
 }
 
 model NotificationRecipient {
@@ -138,6 +211,40 @@ model NotificationRecipient {
   weeklyDigest Boolean  @default(true)
   active       Boolean  @default(true)
 
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model TimezoneEntry {
+  id       String @id @default(cuid())
+  label    String // e.g. "New York"
+  timezone String // IANA name, e.g. "America/New_York"
+  order    Int    @default(0)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+model WeatherLocation {
+  id        String @id @default(cuid())
+  label     String // e.g. "Johannesburg, South Africa"
+  latitude  Float
+  longitude Float
+  order     Int    @default(0)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
 }

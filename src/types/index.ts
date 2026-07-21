@@ -1,6 +1,9 @@
 export const AREAS = ["BUSINESS", "PERSONAL"] as const;
 export type Area = (typeof AREAS)[number];
 
+export const USER_ROLES = ["SUPER_ADMIN", "USER"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
 export const TASK_STATUSES = ["TODO", "IN_PROGRESS", "DONE"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 

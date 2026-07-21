@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { AREAS, DOCUMENT_CATEGORIES } from "@/types";
 
 const DocumentInputSchema = z.object({
@@ -21,6 +22,7 @@ function parseDate(value?: string) {
 }
 
 export async function createDocument(input: z.infer<typeof DocumentInputSchema>) {
+  const user = await requireUser();
   const data = DocumentInputSchema.parse(input);
 
   await prisma.document.create({
@@ -32,6 +34,7 @@ export async function createDocument(input: z.infer<typeof DocumentInputSchema>)
       issueDate: parseDate(data.issueDate),
       expiryDate: parseDate(data.expiryDate),
       notes: data.notes || null,
+      ownerId: user.id,
     },
   });
 
@@ -42,10 +45,11 @@ export async function createDocument(input: z.infer<typeof DocumentInputSchema>)
 const UpdateDocumentSchema = DocumentInputSchema.extend({ id: z.string() });
 
 export async function updateDocument(input: z.infer<typeof UpdateDocumentSchema>) {
+  const user = await requireUser();
   const data = UpdateDocumentSchema.parse(input);
 
   await prisma.document.update({
-    where: { id: data.id },
+    where: { id: data.id, ownerId: user.id },
     data: {
       name: data.name,
       category: data.category,
@@ -62,7 +66,8 @@ export async function updateDocument(input: z.infer<typeof UpdateDocumentSchema>
 }
 
 export async function deleteDocument(id: string) {
-  await prisma.document.delete({ where: { id } });
+  const user = await requireUser();
+  await prisma.document.delete({ where: { id, ownerId: user.id } });
   revalidatePath("/documents");
   revalidatePath("/dashboard");
 }

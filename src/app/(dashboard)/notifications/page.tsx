@@ -4,10 +4,13 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RecipientFormDialog } from "@/components/notifications/recipient-form-dialog";
 import { RecipientRow } from "@/components/notifications/recipient-row";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function NotificationsPage() {
+  const user = await requireUser();
   const recipients = await prisma.notificationRecipient.findMany({
+    where: { ownerId: user.id },
     orderBy: { createdAt: "asc" },
   });
 

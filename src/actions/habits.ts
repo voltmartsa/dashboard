@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { AREAS, HABIT_FREQUENCIES } from "@/types";
 import { utcMidnightFromISODate } from "@/lib/dates";
 
@@ -13,8 +14,9 @@ const HabitInputSchema = z.object({
 });
 
 export async function createHabit(input: z.infer<typeof HabitInputSchema>) {
+  const user = await requireUser();
   const data = HabitInputSchema.parse(input);
-  const count = await prisma.habit.count({ where: { area: data.area } });
+  const count = await prisma.habit.count({ where: { area: data.area, ownerId: user.id } });
 
   await prisma.habit.create({
     data: {
@@ -22,6 +24,7 @@ export async function createHabit(input: z.infer<typeof HabitInputSchema>) {
       area: data.area,
       frequency: data.frequency,
       order: count,
+      ownerId: user.id,
     },
   });
 
@@ -29,11 +32,15 @@ export async function createHabit(input: z.infer<typeof HabitInputSchema>) {
 }
 
 export async function deleteHabit(id: string) {
-  await prisma.habit.delete({ where: { id } });
+  const user = await requireUser();
+  await prisma.habit.delete({ where: { id, ownerId: user.id } });
   revalidatePath("/habits");
 }
 
 export async function toggleHabitLog(habitId: string, isoDate: string) {
+  const user = await requireUser();
+  await prisma.habit.findFirstOrThrow({ where: { id: habitId, ownerId: user.id } });
+
   const date = utcMidnightFromISODate(isoDate);
 
   const existing = await prisma.habitLog.findUnique({

@@ -1,38 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f0f1ec;
-  --card: #ffffff;
-  --foreground: #14171a;
-  --muted-foreground: #6b7280;
-  --border: #e7e8e3;
+  --background: #eae4d8;
+  --card: #fbf9f4;
+  --foreground: #1c1a16;
+  --muted-foreground: #8a8578;
+  --border: #e2dccb;
 
-  --primary: #0d6b4c;
-  --primary-hover: #0a5a40;
+  --primary: #e8604c;
+  --primary-hover: #d2503d;
   --primary-foreground: #ffffff;
-  --primary-soft: #e7f5ee;
+  --primary-soft: #fbe4de;
 
-  --accent-dark: #0b3d2c;
-  --accent-dark-2: #123f2d;
-  --chart-secondary: #34a373;
+  --accent-dark: #1c1a16;
+  --accent-dark-2: #26231d;
+  --chart-secondary: #f2c14e;
 
   --danger: #dc2626;
   --warning: #d97706;
 
-  --radius-card: 1.25rem;
+  --radius-card: 1.5rem;
   --radius-pill: 999px;
 }
 
-/* Personal area gets a purple accent instead of the default Business emerald. */
+/* Personal area swaps which of the two brand accents (coral/gold) is primary. */
 [data-area="personal"] {
-  --primary: #6d28d9;
-  --primary-hover: #5b21b6;
+  --primary: #c98a2e;
+  --primary-hover: #b3781f;
   --primary-foreground: #ffffff;
-  --primary-soft: #f3e8ff;
+  --primary-soft: #fbf0dc;
 
-  --accent-dark: #3b0764;
-  --accent-dark-2: #4c1d95;
-  --chart-secondary: #a855f7;
+  --accent-dark: #1c1a16;
+  --accent-dark-2: #26231d;
+  --chart-secondary: #e8604c;
 }
 
 @theme inline {

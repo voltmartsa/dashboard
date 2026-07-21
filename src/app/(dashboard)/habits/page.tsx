@@ -5,26 +5,18 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { HabitFormDialog } from "@/components/habits/habit-form-dialog";
 import { HabitRow } from "@/components/habits/habit-row";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { lastNDaysUtc, isoDateFromUtcMidnight, todayUtcMidnight } from "@/lib/dates";
-
-function computeStreak(loggedIsoDates: Set<string>): number {
-  let streak = 0;
-  const cursor = todayUtcMidnight();
-  while (loggedIsoDates.has(isoDateFromUtcMidnight(cursor))) {
-    streak++;
-    cursor.setUTCDate(cursor.getUTCDate() - 1);
-  }
-  return streak;
-}
+import { lastNDaysUtc, isoDateFromUtcMidnight } from "@/lib/dates";
+import { computeStreak } from "@/lib/streak";
 
 export default async function HabitsPage() {
-  const area = await getCurrentArea();
+  const [area, user] = await Promise.all([getCurrentArea(), requireUser()]);
   const days = lastNDaysUtc(7);
   const lookback = lastNDaysUtc(60)[0];
 
   const habits = await prisma.habit.findMany({
-    where: { area, active: true },
+    where: { area, active: true, ownerId: user.id },
     orderBy: { order: "asc" },
     include: {
       logs: {

@@ -7,19 +7,26 @@ import { WeeklyBarChart, type WeeklyBarDatum } from "@/components/dashboard/week
 import { UpcomingList, type UpcomingItem } from "@/components/dashboard/upcoming-list";
 import { HabitsToday } from "@/components/dashboard/habits-today";
 import { ExpiringDocuments } from "@/components/dashboard/expiring-documents";
+import { GreetingHeader } from "@/components/dashboard/greeting-header";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
+import { taskAccessWhere, projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { lastNDaysUtc, isoDateFromUtcMidnight, todayUtcMidnight } from "@/lib/dates";
+import { computeStreak } from "@/lib/streak";
+import { cn } from "@/lib/utils";
 import { DOCUMENT_EXPIRY_WARNING_DAYS } from "@/types";
 
 const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 
 export default async function DashboardPage() {
-  const area = await getCurrentArea();
+  const [area, user] = await Promise.all([getCurrentArea(), requireUser()]);
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const sevenDaysAgo = new Date(startOfToday);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  const fourteenDaysAgo = new Date(startOfToday);
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
 
   const [
     openTasksCount,
@@ -28,50 +35,63 @@ export default async function DashboardPage() {
     overdueCount,
     statusBreakdown,
     completedTasksThisWeek,
+    completedLastWeekCount,
     upcomingTasks,
     upcomingProjects,
     habits,
     expiringDocuments,
   ] = await Promise.all([
-    prisma.task.count({ where: { area, status: { not: "DONE" } } }),
+    prisma.task.count({ where: { area, status: { not: "DONE" }, ...taskAccessWhere(user.id) } }),
     prisma.task.count({
-      where: { area, status: "DONE", completedAt: { gte: sevenDaysAgo } },
+      where: { area, status: "DONE", completedAt: { gte: sevenDaysAgo }, ...taskAccessWhere(user.id) },
     }),
-    prisma.project.count({ where: { area, status: "ACTIVE" } }),
+    prisma.project.count({ where: { area, status: "ACTIVE", ...projectAccessWhere(user.id) } }),
     prisma.task.count({
-      where: { area, status: { not: "DONE" }, dueDate: { lt: startOfToday } },
+      where: { area, status: { not: "DONE" }, dueDate: { lt: startOfToday }, ...taskAccessWhere(user.id) },
     }),
     prisma.task.groupBy({
       by: ["status"],
-      where: { area, parentTaskId: null },
+      where: { area, parentTaskId: null, ...taskAccessWhere(user.id) },
       _count: { _all: true },
     }),
     prisma.task.findMany({
-      where: { area, status: "DONE", completedAt: { gte: sevenDaysAgo } },
+      where: { area, status: "DONE", completedAt: { gte: sevenDaysAgo }, ...taskAccessWhere(user.id) },
       select: { completedAt: true },
     }),
+    prisma.task.count({
+      where: {
+        area,
+        status: "DONE",
+        completedAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+        ...taskAccessWhere(user.id),
+      },
+    }),
     prisma.task.findMany({
-      where: { area, status: { not: "DONE" }, dueDate: { gte: startOfToday } },
+      where: { area, status: { not: "DONE" }, dueDate: { gte: startOfToday }, ...taskAccessWhere(user.id) },
       select: { id: true, title: true, dueDate: true },
       orderBy: { dueDate: "asc" },
       take: 5,
     }),
     prisma.project.findMany({
-      where: { area, status: { not: "COMPLETED" }, dueDate: { gte: startOfToday } },
+      where: { area, status: { not: "COMPLETED" }, dueDate: { gte: startOfToday }, ...projectAccessWhere(user.id) },
       select: { id: true, name: true, dueDate: true },
       orderBy: { dueDate: "asc" },
       take: 5,
     }),
     prisma.habit.findMany({
-      where: { area, active: true },
+      where: { area, active: true, ownerId: user.id },
       orderBy: { order: "asc" },
       include: {
-        logs: { where: { date: todayUtcMidnight(), completed: true }, select: { id: true } },
+        logs: {
+          where: { date: { gte: lastNDaysUtc(60)[0] }, completed: true },
+          select: { date: true },
+        },
       },
     }),
     prisma.document.findMany({
       where: {
         area,
+        ownerId: user.id,
         expiryDate: {
           not: null,
           lte: (() => {
@@ -126,11 +146,17 @@ export default async function DashboardPage() {
     .slice(0, 5);
 
   const todayIso = isoDateFromUtcMidnight(todayUtcMidnight());
-  const habitsToday = habits.map((h) => ({
-    id: h.id,
-    name: h.name,
-    done: h.logs.length > 0,
-  }));
+  const habitsToday = habits.map((h) => {
+    const loggedIsoDates = new Set(h.logs.map((log) => isoDateFromUtcMidnight(log.date)));
+    return {
+      id: h.id,
+      name: h.name,
+      done: loggedIsoDates.has(todayIso),
+      streak: computeStreak(loggedIsoDates),
+    };
+  });
+
+  const weekDelta = completedThisWeekCount - completedLastWeekCount;
 
   const areaLabel = area === "BUSINESS" ? "business" : "personal";
 
@@ -141,15 +167,31 @@ export default async function DashboardPage() {
         subtitle={`Plan, prioritize, and accomplish your ${areaLabel} goals.`}
       />
 
+      <GreetingHeader area={area} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <StatCard label="Open tasks" value={openTasksCount} icon={ListChecks} tone="primary" hint="Not yet done" />
+        <StatCard
+          label="Open tasks"
+          value={openTasksCount}
+          icon={ListChecks}
+          tone="primary"
+          hint="Not yet done"
+          href="/tasks?status=open"
+        />
         <StatCard
           label="Completed this week"
           value={completedThisWeekCount}
           icon={CheckCircle2}
           hint="Last 7 days"
+          href={`/tasks?status=DONE&completedAfter=${encodeURIComponent(sevenDaysAgo.toISOString())}`}
         />
-        <StatCard label="Active projects" value={activeProjectsCount} icon={FolderKanban} />
+        <StatCard
+          label="Active projects"
+          value={activeProjectsCount}
+          icon={FolderKanban}
+          hint="In motion"
+          href="/projects?status=ACTIVE"
+        />
         <StatCard
           label="Overdue"
           value={overdueCount}
@@ -163,6 +205,18 @@ export default async function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>This week</CardTitle>
+            <span
+              className={cn(
+                "text-xs font-medium",
+                weekDelta > 0 && "text-emerald-600",
+                weekDelta < 0 && "text-danger",
+                weekDelta === 0 && "text-muted-foreground",
+              )}
+            >
+              {weekDelta === 0
+                ? "Same as last week"
+                : `${weekDelta > 0 ? "+" : ""}${weekDelta} vs last week`}
+            </span>
           </CardHeader>
           <WeeklyBarChart data={barData} />
         </Card>
@@ -195,7 +249,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="mb-4">
         <CardHeader>
           <CardTitle>Documents</CardTitle>
         </CardHeader>

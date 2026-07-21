@@ -6,32 +6,46 @@ import { TaskFormDialog } from "@/components/tasks/task-form-dialog";
 import { TaskRow } from "@/components/tasks/task-row";
 import { TaskFilterBar } from "@/components/tasks/task-filter-bar";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
+import { taskAccessWhere, projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; priority?: string }>;
+  searchParams: Promise<{ status?: string; priority?: string; completedAfter?: string }>;
 }) {
-  const area = await getCurrentArea();
-  const { status, priority } = await searchParams;
+  const [area, user] = await Promise.all([getCurrentArea(), requireUser()]);
+  const { status, priority, completedAfter } = await searchParams;
+
+  const statusFilter =
+    status === "open"
+      ? { status: { not: "DONE" } }
+      : status && status !== "all"
+        ? { status }
+        : {};
 
   const [tasks, projects] = await Promise.all([
     prisma.task.findMany({
       where: {
         area,
         parentTaskId: null,
-        ...(status && status !== "all" ? { status } : {}),
+        ...taskAccessWhere(user.id),
+        ...statusFilter,
+        ...(status === "DONE" && completedAfter
+          ? { completedAt: { gte: new Date(completedAfter) } }
+          : {}),
         ...(priority && priority !== "all" ? { priority } : {}),
       },
       include: {
         project: { select: { id: true, name: true, color: true } },
         subtasks: { select: { id: true, status: true } },
+        assignee: { select: { id: true, name: true } },
       },
       orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
     }),
     prisma.project.findMany({
-      where: { area },
+      where: { area, ...projectAccessWhere(user.id) },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

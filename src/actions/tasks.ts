@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { canAccessTask, isTaskOwner } from "@/lib/access";
 import { generateSubtaskSuggestions } from "@/lib/anthropic";
 import { AREAS, PRIORITIES, TASK_STATUSES } from "@/types";
 import type { SubtaskSuggestion } from "@/types";
@@ -23,6 +25,7 @@ function parseDueDate(value?: string) {
 }
 
 export async function createTask(input: z.infer<typeof TaskInputSchema>) {
+  const user = await requireUser();
   const data = TaskInputSchema.parse(input);
 
   await prisma.task.create({
@@ -34,6 +37,7 @@ export async function createTask(input: z.infer<typeof TaskInputSchema>) {
       priority: data.priority,
       dueDate: parseDueDate(data.dueDate),
       projectId: data.projectId || null,
+      ownerId: user.id,
     },
   });
 
@@ -47,7 +51,12 @@ const UpdateTaskSchema = TaskInputSchema.extend({
 });
 
 export async function updateTask(input: z.infer<typeof UpdateTaskSchema>) {
+  const user = await requireUser();
   const data = UpdateTaskSchema.parse(input);
+
+  if (!(await canAccessTask(data.id, user.id))) {
+    throw new Error("You don't have access to this task.");
+  }
 
   await prisma.task.update({
     where: { id: data.id },
@@ -70,14 +79,24 @@ export async function updateTask(input: z.infer<typeof UpdateTaskSchema>) {
 }
 
 export async function deleteTask(id: string) {
+  const user = await requireUser();
+  if (!(await isTaskOwner(id, user.id))) {
+    throw new Error("Only the task owner can delete it.");
+  }
+
   await prisma.task.delete({ where: { id } });
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
 }
 
 export async function addSubtask(parentTaskId: string, title: string, dueDate?: string) {
+  const user = await requireUser();
   const trimmed = title.trim();
   if (!trimmed) return;
+
+  if (!(await canAccessTask(parentTaskId, user.id))) {
+    throw new Error("You don't have access to this task.");
+  }
 
   const parent = await prisma.task.findUniqueOrThrow({ where: { id: parentTaskId } });
   const siblingCount = await prisma.task.count({ where: { parentTaskId } });
@@ -89,6 +108,7 @@ export async function addSubtask(parentTaskId: string, title: string, dueDate?: 
       parentTaskId,
       order: siblingCount,
       dueDate: parseDueDate(dueDate),
+      ownerId: parent.ownerId,
     },
   });
 
@@ -97,6 +117,11 @@ export async function addSubtask(parentTaskId: string, title: string, dueDate?: 
 }
 
 export async function updateSubtaskDueDate(id: string, dueDate: string) {
+  const user = await requireUser();
+  if (!(await canAccessTask(id, user.id))) {
+    throw new Error("You don't have access to this task.");
+  }
+
   const subtask = await prisma.task.update({
     where: { id },
     data: { dueDate: parseDueDate(dueDate) },
@@ -110,6 +135,11 @@ export async function updateSubtaskDueDate(id: string, dueDate: string) {
 export async function getSubtaskSuggestions(
   taskId: string,
 ): Promise<SubtaskSuggestion[]> {
+  const user = await requireUser();
+  if (!(await canAccessTask(taskId, user.id))) {
+    throw new Error("You don't have access to this task.");
+  }
+
   const task = await prisma.task.findUniqueOrThrow({ where: { id: taskId } });
   return generateSubtaskSuggestions({
     title: task.title,
@@ -134,7 +164,13 @@ const ConfirmSubtasksSchema = z.object({
 export async function createSubtasksFromSuggestions(
   input: z.infer<typeof ConfirmSubtasksSchema>,
 ) {
+  const user = await requireUser();
   const { parentTaskId, subtasks } = ConfirmSubtasksSchema.parse(input);
+
+  if (!(await canAccessTask(parentTaskId, user.id))) {
+    throw new Error("You don't have access to this task.");
+  }
+
   const parent = await prisma.task.findUniqueOrThrow({ where: { id: parentTaskId } });
   const siblingCount = await prisma.task.count({ where: { parentTaskId } });
 
@@ -148,6 +184,7 @@ export async function createSubtasksFromSuggestions(
       aiGenerated: true,
       order: siblingCount + i,
       dueDate: parseDueDate(s.dueDate),
+      ownerId: parent.ownerId,
     })),
   });
 
@@ -156,6 +193,11 @@ export async function createSubtasksFromSuggestions(
 }
 
 export async function toggleTaskStatus(id: string) {
+  const user = await requireUser();
+  if (!(await canAccessTask(id, user.id))) {
+    throw new Error("You don't have access to this task.");
+  }
+
   const task = await prisma.task.findUniqueOrThrow({ where: { id } });
   const nextStatus = task.status === "DONE" ? "TODO" : "DONE";
 

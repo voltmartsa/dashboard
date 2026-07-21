@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { MonthGrid, type CalendarItem } from "@/components/calendar/month-grid";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
+import { taskAccessWhere, projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { parseMonthParam, monthParam, monthLabel, monthGridWeeks, dayKey } from "@/lib/calendar";
 
@@ -13,7 +15,7 @@ export default async function CalendarPage({
 }) {
   const { month: monthQuery } = await searchParams;
   const { year, month } = parseMonthParam(monthQuery);
-  const area = await getCurrentArea();
+  const [area, user] = await Promise.all([getCurrentArea(), requireUser()]);
 
   const weeks = monthGridWeeks(year, month);
   const rangeStart = weeks[0][0];
@@ -24,6 +26,7 @@ export default async function CalendarPage({
       where: {
         area,
         dueDate: { gte: rangeStart, lte: rangeEnd },
+        ...taskAccessWhere(user.id),
       },
       select: { id: true, title: true, dueDate: true, priority: true },
     }),
@@ -31,6 +34,7 @@ export default async function CalendarPage({
       where: {
         area,
         dueDate: { gte: rangeStart, lte: rangeEnd },
+        ...projectAccessWhere(user.id),
       },
       select: { id: true, name: true, dueDate: true },
     }),

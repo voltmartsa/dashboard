@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { sendEmail } from "@/lib/notifications/email";
 import { sendWhatsApp } from "@/lib/notifications/whatsapp";
 
@@ -19,6 +20,7 @@ const RecipientInputSchema = z
   });
 
 export async function createRecipient(input: z.infer<typeof RecipientInputSchema>) {
+  const user = await requireUser();
   const data = RecipientInputSchema.parse(input);
 
   await prisma.notificationRecipient.create({
@@ -28,6 +30,7 @@ export async function createRecipient(input: z.infer<typeof RecipientInputSchema
       whatsapp: data.whatsapp || null,
       dailyDigest: data.dailyDigest,
       weeklyDigest: data.weeklyDigest,
+      ownerId: user.id,
     },
   });
 
@@ -35,7 +38,8 @@ export async function createRecipient(input: z.infer<typeof RecipientInputSchema
 }
 
 export async function deleteRecipient(id: string) {
-  await prisma.notificationRecipient.delete({ where: { id } });
+  const user = await requireUser();
+  await prisma.notificationRecipient.delete({ where: { id, ownerId: user.id } });
   revalidatePath("/notifications");
 }
 
@@ -43,7 +47,10 @@ export async function toggleRecipientField(
   id: string,
   field: "dailyDigest" | "weeklyDigest" | "active",
 ) {
-  const recipient = await prisma.notificationRecipient.findUniqueOrThrow({ where: { id } });
+  const user = await requireUser();
+  const recipient = await prisma.notificationRecipient.findFirstOrThrow({
+    where: { id, ownerId: user.id },
+  });
   await prisma.notificationRecipient.update({
     where: { id },
     data: { [field]: !recipient[field] },
@@ -52,20 +59,23 @@ export async function toggleRecipientField(
 }
 
 export async function sendTestNotification(id: string): Promise<{ ok: boolean; error?: string }> {
-  const recipient = await prisma.notificationRecipient.findUniqueOrThrow({ where: { id } });
+  const user = await requireUser();
+  const recipient = await prisma.notificationRecipient.findFirstOrThrow({
+    where: { id, ownerId: user.id },
+  });
 
   try {
     if (recipient.email) {
       await sendEmail(
         recipient.email,
-        "Foundry — test notification",
-        "<p>This is a test notification from your Foundry dashboard. If you can read this, email notifications are working.</p>",
+        "Squash — test notification",
+        "<p>This is a test notification from your Squash dashboard. If you can read this, email notifications are working.</p>",
       );
     }
     if (recipient.whatsapp) {
       await sendWhatsApp(
         recipient.whatsapp,
-        "This is a test notification from your Foundry dashboard. If you got this, WhatsApp notifications are working.",
+        "This is a test notification from your Squash dashboard. If you got this, WhatsApp notifications are working.",
       );
     }
     return { ok: true };

@@ -1,4 +1,4 @@
-# Foundry
+# Squash
 
 A personal dashboard for running both your business and personal life from one place: tasks, projects, notes, a calendar, habits, and documents — with an AI-assisted "break into subtasks" feature, a login gate, and email/WhatsApp notifications.
 

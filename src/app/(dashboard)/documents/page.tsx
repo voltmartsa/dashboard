@@ -5,16 +5,17 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DocumentFormDialog } from "@/components/documents/document-form-dialog";
 import { DocumentRow } from "@/components/documents/document-row";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getExpiryStatus } from "@/lib/documents";
 
 const STATUS_RANK = { expired: 0, expiring: 1, none: 2, valid: 3 };
 
 export default async function DocumentsPage() {
-  const area = await getCurrentArea();
+  const [area, user] = await Promise.all([getCurrentArea(), requireUser()]);
 
   const documents = await prisma.document.findMany({
-    where: { area },
+    where: { area, ownerId: user.id },
     orderBy: { name: "asc" },
   });
 

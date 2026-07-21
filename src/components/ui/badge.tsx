@@ -19,9 +19,9 @@ export function Badge({
 }
 
 const priorityClasses: Record<Priority, string> = {
-  LOW: "bg-gray-100 text-gray-600",
-  MEDIUM: "bg-blue-50 text-blue-600",
-  HIGH: "bg-amber-50 text-amber-700",
+  LOW: "bg-black/[0.05] text-muted-foreground",
+  MEDIUM: "bg-amber-50 text-amber-700",
+  HIGH: "bg-orange-50 text-orange-700",
   URGENT: "bg-red-50 text-red-600",
 };
 
@@ -31,7 +31,7 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
 }
 
 const statusClasses: Record<TaskStatus, string> = {
-  TODO: "bg-gray-100 text-gray-600",
+  TODO: "bg-black/[0.05] text-muted-foreground",
   IN_PROGRESS: "bg-primary-soft text-primary",
   DONE: "bg-emerald-100 text-emerald-700",
 };
@@ -47,7 +47,7 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
 }
 
 const projectStatusClasses: Record<ProjectStatus, string> = {
-  PLANNED: "bg-gray-100 text-gray-600",
+  PLANNED: "bg-black/[0.05] text-muted-foreground",
   ACTIVE: "bg-primary-soft text-primary",
   ON_HOLD: "bg-amber-50 text-amber-700",
   COMPLETED: "bg-emerald-100 text-emerald-700",
@@ -72,7 +72,7 @@ const expiryClasses: Record<ExpiryStatus, string> = {
   expired: "bg-red-50 text-danger",
   expiring: "bg-amber-50 text-amber-700",
   valid: "bg-emerald-100 text-emerald-700",
-  none: "bg-gray-100 text-gray-600",
+  none: "bg-black/[0.05] text-muted-foreground",
 };
 
 const expiryLabel: Record<ExpiryStatus, string> = {

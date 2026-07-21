@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function NoteDetailPage({
@@ -11,8 +12,9 @@ export default async function NoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const user = await requireUser();
 
-  const note = await prisma.note.findUnique({ where: { id } });
+  const note = await prisma.note.findFirst({ where: { id, ownerId: user.id } });
   if (!note) notFound();
 
   return (

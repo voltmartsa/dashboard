@@ -6,8 +6,6 @@ import { toggleHabitLog, deleteHabit } from "@/actions/habits";
 import { isoDateFromUtcMidnight, todayUtcMidnight } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
-
 export function HabitRow({
   habit,
   days,
@@ -21,6 +19,7 @@ export function HabitRow({
 }) {
   const [isPending, startTransition] = useTransition();
   const today = todayUtcMidnight();
+  const doneCount = days.filter((day) => loggedIsoDates.has(isoDateFromUtcMidnight(day))).length;
 
   return (
     <div className="flex items-center gap-4 rounded-xl px-3 py-3 hover:bg-black/[0.02] transition-colors">
@@ -34,31 +33,32 @@ export function HabitRow({
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 shrink-0">
-        {days.map((day, i) => {
-          const iso = isoDateFromUtcMidnight(day);
-          const done = loggedIsoDates.has(iso);
-          const isFuture = day.getTime() > today.getTime();
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground tabular-nums">
+          Sessions completed: {doneCount}/{days.length}
+        </span>
+        <div className="flex items-end gap-1">
+          {days.map((day) => {
+            const iso = isoDateFromUtcMidnight(day);
+            const done = loggedIsoDates.has(iso);
+            const isFuture = day.getTime() > today.getTime();
 
-          return (
-            <button
-              key={iso}
-              type="button"
-              disabled={isFuture || isPending}
-              onClick={() => startTransition(() => toggleHabitLog(habit.id, iso))}
-              title={iso}
-              className={cn(
-                "flex size-8 flex-col items-center justify-center rounded-full text-[10px] font-medium leading-none cursor-pointer transition-colors disabled:cursor-not-allowed",
-                done
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-black/[0.05] text-muted-foreground hover:bg-black/[0.09]",
-                isFuture && "opacity-40",
-              )}
-            >
-              <span>{DAY_LABELS[i]}</span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={iso}
+                type="button"
+                disabled={isFuture || isPending}
+                onClick={() => startTransition(() => toggleHabitLog(habit.id, iso))}
+                title={iso}
+                className={cn(
+                  "h-7 w-2 rounded-full cursor-pointer transition-colors disabled:cursor-not-allowed",
+                  done ? "bg-primary" : "bg-black/[0.08] hover:bg-black/[0.14]",
+                  isFuture && "opacity-40",
+                )}
+              />
+            );
+          })}
+        </div>
       </div>
 
       <button

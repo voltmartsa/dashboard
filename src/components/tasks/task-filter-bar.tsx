@@ -6,6 +6,7 @@ import { PRIORITIES, PRIORITY_LABEL } from "@/types";
 
 const STATUS_FILTERS = [
   { value: "all", label: "All" },
+  { value: "open", label: "Open" },
   { value: "TODO", label: "To do" },
   { value: "IN_PROGRESS", label: "In progress" },
   { value: "DONE", label: "Done" },
@@ -25,6 +26,9 @@ export function TaskFilterBar() {
       params.delete(key);
     } else {
       params.set(key, value);
+    }
+    if (key === "status" && value !== "DONE") {
+      params.delete("completedAfter");
     }
     router.push(`${pathname}?${params.toString()}`);
   }

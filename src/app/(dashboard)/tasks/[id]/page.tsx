@@ -8,6 +8,9 @@ import { SubtaskList } from "@/components/tasks/subtask-list";
 import { SubtaskBreakdownDialog } from "@/components/tasks/subtask-breakdown-dialog";
 import { DeleteTaskButton } from "@/components/tasks/delete-task-button";
 import { CompleteTaskButton } from "@/components/tasks/complete-task-button";
+import { TaskCollaborators } from "@/components/tasks/task-collaborators";
+import { requireUser } from "@/lib/auth";
+import { taskAccessWhere, projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { formatDueDate } from "@/lib/utils";
 import type { Priority, TaskStatus } from "@/types";
@@ -18,11 +21,14 @@ export default async function TaskDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const user = await requireUser();
 
-  const task = await prisma.task.findUnique({
-    where: { id },
+  const task = await prisma.task.findFirst({
+    where: { id, ...taskAccessWhere(user.id) },
     include: {
       project: { select: { id: true, name: true } },
+      owner: { select: { id: true, name: true, email: true } },
+      collaborators: { include: { user: { select: { id: true, name: true, email: true } } } },
       subtasks: {
         orderBy: { order: "asc" },
         select: { id: true, title: true, status: true, aiGenerated: true, dueDate: true },
@@ -33,7 +39,7 @@ export default async function TaskDetailPage({
   if (!task) notFound();
 
   const projects = await prisma.project.findMany({
-    where: { area: task.area },
+    where: { area: task.area, ...projectAccessWhere(user.id) },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
@@ -108,6 +114,21 @@ export default async function TaskDetailPage({
         </CardHeader>
         <SubtaskList parentTaskId={task.id} subtasks={task.subtasks} />
       </Card>
+
+      {task.owner && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Collaborators</CardTitle>
+          </CardHeader>
+          <TaskCollaborators
+            taskId={task.id}
+            isOwner={task.owner.id === user.id}
+            owner={task.owner}
+            collaborators={task.collaborators.map((c) => c.user)}
+            assigneeId={task.assigneeId}
+          />
+        </Card>
+      )}
     </>
   );
 }

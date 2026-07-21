@@ -3,14 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { AREAS } from "@/types";
 
 export async function createNote(area: (typeof AREAS)[number]) {
+  const user = await requireUser();
   const note = await prisma.note.create({
     data: {
       title: "Untitled note",
       content: "",
       area,
+      ownerId: user.id,
     },
   });
   revalidatePath("/notes");
@@ -27,10 +30,11 @@ const UpdateNoteSchema = z.object({
 });
 
 export async function updateNote(input: z.infer<typeof UpdateNoteSchema>) {
+  const user = await requireUser();
   const data = UpdateNoteSchema.parse(input);
 
   await prisma.note.update({
-    where: { id: data.id },
+    where: { id: data.id, ownerId: user.id },
     data: {
       title: data.title,
       content: data.content,
@@ -45,13 +49,15 @@ export async function updateNote(input: z.infer<typeof UpdateNoteSchema>) {
 }
 
 export async function togglePinned(id: string) {
-  const note = await prisma.note.findUniqueOrThrow({ where: { id } });
+  const user = await requireUser();
+  const note = await prisma.note.findFirstOrThrow({ where: { id, ownerId: user.id } });
   await prisma.note.update({ where: { id }, data: { pinned: !note.pinned } });
   revalidatePath("/notes");
   revalidatePath(`/notes/${id}`);
 }
 
 export async function deleteNote(id: string) {
-  await prisma.note.delete({ where: { id } });
+  const user = await requireUser();
+  await prisma.note.delete({ where: { id, ownerId: user.id } });
   revalidatePath("/notes");
 }

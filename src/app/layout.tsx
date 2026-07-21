@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Foundry — Personal Dashboard",
+  title: "Squash — Personal Dashboard",
   description: "Run your business and personal life from one place.",
 };
 

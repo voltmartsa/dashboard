@@ -4,13 +4,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { NewNoteButton } from "@/components/notes/new-note-button";
 import { NoteCard } from "@/components/notes/note-card";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function NotesPage() {
-  const area = await getCurrentArea();
+  const [area, user] = await Promise.all([getCurrentArea(), requireUser()]);
 
   const notes = await prisma.note.findMany({
-    where: { area },
+    where: { area, ownerId: user.id },
     orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
   });
 

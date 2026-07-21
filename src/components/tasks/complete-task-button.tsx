@@ -3,16 +3,22 @@
 import { useTransition } from "react";
 import { Check } from "lucide-react";
 import { toggleTaskStatus } from "@/actions/tasks";
+import { fireConfetti } from "@/lib/confetti";
 import { cn } from "@/lib/utils";
 
 export function CompleteTaskButton({ id, status }: { id: string; status: string }) {
   const [isPending, startTransition] = useTransition();
   const done = status === "DONE";
 
+  function handleClick() {
+    if (!done) fireConfetti();
+    startTransition(() => toggleTaskStatus(id));
+  }
+
   return (
     <button
       type="button"
-      onClick={() => startTransition(() => toggleTaskStatus(id))}
+      onClick={handleClick}
       disabled={isPending}
       className={cn(
         "inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium cursor-pointer disabled:opacity-50",

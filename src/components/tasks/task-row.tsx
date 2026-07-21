@@ -7,7 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PriorityBadge } from "@/components/ui/badge";
 import { TaskFormDialog } from "@/components/tasks/task-form-dialog";
 import { toggleTaskStatus, deleteTask } from "@/actions/tasks";
-import { cn, formatDueDate } from "@/lib/utils";
+import { fireConfetti } from "@/lib/confetti";
+import { cn, formatDueDate, initials } from "@/lib/utils";
 import type { Area, Priority } from "@/types";
 
 export type TaskRowData = {
@@ -20,6 +21,7 @@ export type TaskRowData = {
   projectId: string | null;
   project: { id: string; name: string; color: string | null } | null;
   subtasks: { id: string; status: string }[];
+  assignee?: { id: string; name: string } | null;
 };
 
 export function TaskRow({
@@ -43,7 +45,10 @@ export function TaskRow({
     <div className="group flex items-center gap-3 rounded-xl px-3 py-3 hover:bg-black/[0.02] transition-colors">
       <Checkbox
         checked={done}
-        onCheckedChange={() => startTransition(() => toggleTaskStatus(task.id))}
+        onCheckedChange={() => {
+          if (!done) fireConfetti();
+          startTransition(() => toggleTaskStatus(task.id));
+        }}
         disabled={isPending}
       />
 
@@ -80,6 +85,15 @@ export function TaskRow({
           )}
         </div>
       </div>
+
+      {task.assignee && (
+        <div
+          className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[10px] font-semibold text-primary"
+          title={`Assigned to ${task.assignee.name}`}
+        >
+          {initials(task.assignee.name) || "?"}
+        </div>
+      )}
 
       <PriorityBadge priority={task.priority as Priority} />
 

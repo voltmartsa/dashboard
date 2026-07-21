@@ -8,7 +8,10 @@ import { ProjectFormDialog } from "@/components/projects/project-form-dialog";
 import { DeleteProjectButton } from "@/components/projects/delete-project-button";
 import { TaskFormDialog } from "@/components/tasks/task-form-dialog";
 import { TaskRow } from "@/components/tasks/task-row";
+import { ProjectCollaborators } from "@/components/projects/project-collaborators";
 import { getCurrentArea } from "@/lib/area";
+import { requireUser } from "@/lib/auth";
+import { projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { formatDueDate } from "@/lib/utils";
 import type { Area, ProjectStatus } from "@/types";
@@ -19,18 +22,21 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const user = await requireUser();
 
-  const project = await prisma.project.findUnique({
-    where: { id },
+  const project = await prisma.project.findFirst({
+    where: { id, ...projectAccessWhere(user.id) },
     include: {
       tasks: {
         where: { parentTaskId: null },
         include: {
           project: { select: { id: true, name: true, color: true } },
           subtasks: { select: { id: true, status: true } },
+          assignee: { select: { id: true, name: true } },
         },
         orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
       },
+      collaborators: { include: { user: { select: { id: true, name: true, email: true } } } },
     },
   });
 
@@ -38,7 +44,7 @@ export default async function ProjectDetailPage({
 
   const area = await getCurrentArea();
   const projects = await prisma.project.findMany({
-    where: { area: project.area },
+    where: { area: project.area, ...projectAccessWhere(user.id) },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
@@ -129,6 +135,17 @@ export default async function ProjectDetailPage({
             ))}
           </div>
         )}
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Collaborators</CardTitle>
+        </CardHeader>
+        <ProjectCollaborators
+          projectId={project.id}
+          isOwner={project.ownerId === user.id}
+          collaborators={project.collaborators.map((c) => c.user)}
+        />
       </Card>
     </>
   );
