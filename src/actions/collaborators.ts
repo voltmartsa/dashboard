@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { isTaskOwner, isProjectOwner } from "@/lib/access";
+import { sendPushToUser } from "@/lib/notifications/push";
 
 const EmailSchema = z.string().trim().toLowerCase().email("Enter a valid email");
 
@@ -112,7 +113,16 @@ export async function assignTask(taskId: string, assigneeId: string | null) {
     }
   }
 
-  await prisma.task.update({ where: { id: taskId }, data: { assigneeId } });
+  const task = await prisma.task.update({ where: { id: taskId }, data: { assigneeId } });
   revalidatePath(`/tasks/${taskId}`);
   revalidatePath("/tasks");
+
+  if (assigneeId && assigneeId !== user.id) {
+    try {
+      await sendPushToUser(assigneeId, { title: "New task assigned", body: task.title });
+    } catch {
+      // Best-effort — don't fail the assignment if push delivery has an issue
+      // (e.g. Firebase not configured yet).
+    }
+  }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Overrides @capacitor/android's default indigo/pink to match Squash's coral brand color. -->
+    <color name="colorPrimary">#E8604C</color>
+    <color name="colorPrimaryDark">#D2503D</color>
+    <color name="colorAccent">#F2C14E</color>
+</resources>

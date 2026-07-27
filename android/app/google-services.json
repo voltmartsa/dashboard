@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "425701149580",
+    "project_id": "squash-44d90",
+    "storage_bucket": "squash-44d90.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:425701149580:android:ea2d0b915a2b091fa8e4a9",
+        "android_client_info": {
+          "package_name": "com.squash.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCt-NRnfK3Fs-ZQBuGN_Jprg9kh8tjcseQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

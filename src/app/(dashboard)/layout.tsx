@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { PushRegistration } from "@/components/push/push-registration";
 import { getCurrentArea } from "@/lib/area";
 import { requireUser } from "@/lib/auth";
 
@@ -22,6 +23,7 @@ export default async function DashboardGroupLayout({
         <main className="flex-1">{children}</main>
       </div>
       <MobileNav user={user} />
+      <PushRegistration />
     </div>
   );
 }

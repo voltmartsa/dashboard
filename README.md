@@ -94,6 +94,26 @@ This app also runs on cPanel shared/VPS hosting via **Setup Node.js App** (Phusi
    - Daily, e.g. `0 8 * * *` → `curl -s "https://yourdomain.com/api/cron/daily-digest?secret=YOUR_CRON_SECRET"`
    - Weekly, e.g. `0 8 * * 1` → `curl -s "https://yourdomain.com/api/cron/weekly-digest?secret=YOUR_CRON_SECRET"`
 
+## Android app (APK)
+
+The `android/` folder is a [Capacitor](https://capacitorjs.com) native project that wraps the live site (`squashsa.vercel.app`, set in `capacitor.config.ts`) in a standalone Android app — home-screen icon, splash screen, no browser chrome. It's a WebView pointed at your Vercel deployment, not a bundled offline copy: Squash uses server actions, cookies, and a live database, so there's nothing meaningful to statically export. That also means **you don't need to rebuild the APK when you ship a normal code change** — only the app shell (icon, name, splash, target URL) lives in `android/`; everyday feature work just goes out through your normal Vercel deploy.
+
+Building the actual `.apk` needs the Android SDK, which isn't part of this repo (it's a multi-GB toolchain, not something to commit). You have two options:
+
+**Option A — Android Studio (recommended if you'll touch this more than once)**
+1. Install [Android Studio](https://developer.android.com/studio) (bundles the SDK and a JDK).
+2. `npm run android:open` — opens `android/` in Android Studio.
+3. Let Gradle sync finish, then **Build → Build Bundle(s) / APK(s) → Build APK(s)**. The unsigned debug APK lands in `android/app/build/outputs/apk/debug/`.
+4. To install straight onto a connected phone/emulator instead: **Run ▶** in Android Studio, or `npm run android:build` from a terminal that has `adb`/Gradle on its PATH.
+
+**Option B — command line only**
+1. Install a JDK (17+) and the Android command-line SDK tools; set `ANDROID_HOME`/`local.properties` to point at the SDK, same as Android Studio would.
+2. `npm run android:build` — runs `cap sync` then `gradlew assembleDebug`. Output: `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+A debug APK installs fine for personal/sideloaded use (enable "Install unknown apps" on the phone) but isn't signed for the Play Store — that needs a release keystore and `gradlew assembleRelease`, which Android Studio's **Build → Generate Signed Bundle/APK** wizard walks through if you get there.
+
+**If the production URL or branding ever changes:** edit `capacitor.config.ts` (URL/app name/app ID), then `npm run android:sync` before rebuilding. App icons live under `android/app/src/main/res/mipmap-*/` and the splash screens under `android/app/src/main/res/drawable*/splash.png` — both were generated from the same logo mark as the web favicon (`src/app/icon.svg`); regenerate them with an image tool (or ask me) if you redesign the logo.
+
 ## Project structure
 
 ```

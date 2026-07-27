@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     // Plain Node/CommonJS scripts that run outside the Next.js compiler.
     "server.js",
     "scripts/**",
+    // Native Android project (Capacitor) and its placeholder web dir — not
+    // part of the Next.js app, includes vendored/generated native-side JS.
+    "android/**",
+    "www/**",
   ]),
 ]);
 

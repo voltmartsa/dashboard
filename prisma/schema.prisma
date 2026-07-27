@@ -32,6 +32,7 @@ model User {
   timezoneEntries        TimezoneEntry[]
   weatherLocations       WeatherLocation[]
   notificationRecipients NotificationRecipient[]
+  pushSubscriptions      PushSubscription[]
 }
 
 model Task {
@@ -247,4 +248,15 @@ model WeatherLocation {
   createdAt DateTime @default(now())
 
   @@index([ownerId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   @default("android")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
