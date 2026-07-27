@@ -58,13 +58,13 @@ export default async function TaskDetailPage({
       </Link>
 
       <Card className="mb-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <StatusBadge status={task.status as TaskStatus} />
               <PriorityBadge priority={task.priority as Priority} />
             </div>
-            <h1 className="text-xl font-semibold text-foreground">{task.title}</h1>
+            <h1 className="text-xl font-semibold text-foreground break-words">{task.title}</h1>
             {task.description && (
               <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
                 {task.description}
@@ -80,7 +80,7 @@ export default async function TaskDetailPage({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
             <CompleteTaskButton id={task.id} status={task.status} />
             <TaskFormDialog
               area={task.area as "BUSINESS" | "PERSONAL"}

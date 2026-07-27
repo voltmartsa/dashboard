@@ -29,6 +29,7 @@ export async function GreetingHeader({ area }: { area: Area }) {
 
   return (
     <GreetingClient
+      name={user.name}
       dueTodayCount={dueTodayCount}
       weather={
         weather && primaryLocation

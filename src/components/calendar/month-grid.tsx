@@ -32,9 +32,10 @@ export function MonthGrid({
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="px-3 py-2.5 text-xs font-medium text-muted-foreground text-center"
+            className="px-1 py-2 text-[10px] font-medium text-muted-foreground text-center sm:px-3 sm:py-2.5 sm:text-xs"
           >
-            {label}
+            <span className="sm:hidden">{label.slice(0, 1)}</span>
+            <span className="hidden sm:inline">{label}</span>
           </div>
         ))}
       </div>
@@ -58,13 +59,13 @@ export function MonthGrid({
                   }
                 }}
                 className={cn(
-                  "min-h-[110px] border-b border-r border-border p-2 last:border-r-0 text-left hover:bg-black/[0.02] cursor-pointer",
+                  "min-h-[56px] border-b border-r border-border p-1 last:border-r-0 text-left hover:bg-black/[0.02] cursor-pointer sm:min-h-[110px] sm:p-2",
                   !inMonth && "bg-black/[0.015]",
                 )}
               >
                 <span
                   className={cn(
-                    "inline-flex size-6 items-center justify-center rounded-full text-xs font-medium",
+                    "inline-flex size-5 items-center justify-center rounded-full text-[11px] font-medium sm:size-6 sm:text-xs",
                     isToday
                       ? "bg-primary text-primary-foreground"
                       : inMonth
@@ -74,7 +75,23 @@ export function MonthGrid({
                 >
                   {day.getDate()}
                 </span>
-                <div className="mt-1.5 flex flex-col gap-1">
+
+                {/* Mobile: compact dots, tap for detail */}
+                {items.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-0.5 sm:hidden">
+                    {items.slice(0, 4).map((item) => (
+                      <span
+                        key={item.id}
+                        className="size-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: AREA_DOT_COLOR[item.area] }}
+                        aria-hidden
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Desktop: full item labels */}
+                <div className="mt-1.5 hidden flex-col gap-1 sm:flex">
                   {items.slice(0, 3).map((item) => (
                     <Link
                       key={item.id}

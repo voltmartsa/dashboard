@@ -21,9 +21,11 @@ function greetingFor(hour: number): { text: string; Icon: LucideIcon } {
 }
 
 export function GreetingClient({
+  name,
   dueTodayCount,
   weather,
 }: {
+  name: string;
   dueTodayCount: number;
   weather: GreetingWeather;
 }) {
@@ -41,6 +43,7 @@ export function GreetingClient({
   }
 
   const { text, Icon } = greetingFor(now.getHours());
+  const firstName = name.trim().split(/\s+/)[0];
   const dateLabel = new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     month: "long",
@@ -54,7 +57,9 @@ export function GreetingClient({
         <Icon className="size-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-lg font-semibold text-foreground">{text}</p>
+        <p className="text-lg font-semibold text-foreground">
+          {text}, {firstName}
+        </p>
         <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
           <span>{dateLabel}</span>
           {dueTodayCount > 0 && (

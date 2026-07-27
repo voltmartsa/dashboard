@@ -24,7 +24,7 @@ export function WeekGrid({
 
   return (
     <div className="rounded-[var(--radius-card)] border border-border bg-card overflow-hidden">
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-7 sm:divide-y-0 sm:divide-x">
         {days.map((day) => {
           const items = itemsByDay.get(dayKey(day)) ?? [];
           const isToday = isSameDay(day, today);
@@ -41,9 +41,13 @@ export function WeekGrid({
                   setSelectedDay(day);
                 }
               }}
-              className="min-h-[420px] border-r border-border p-2.5 last:border-r-0 text-left hover:bg-black/[0.02] cursor-pointer"
+              className={cn(
+                "p-2.5 text-left hover:bg-black/[0.02] cursor-pointer",
+                "min-h-[64px] sm:min-h-[420px]",
+                isToday && "bg-primary-soft/40 sm:bg-transparent",
+              )}
             >
-              <div className="mb-1.5 flex items-center justify-between">
+              <div className="mb-1.5 flex items-center gap-2 sm:justify-between">
                 <span className="text-xs font-medium text-muted-foreground">
                   {WEEKDAY_LABELS[day.getDay()]}
                 </span>

@@ -122,7 +122,7 @@ export default async function CalendarPage({
         title="Calendar"
         subtitle="Deadlines for tasks and projects at a glance."
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {viewToggle}
             {view === "month" ? (
               <div className="flex items-center gap-2">
