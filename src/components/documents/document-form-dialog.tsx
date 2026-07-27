@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createDocument, updateDocument } from "@/actions/documents";
-import { DOCUMENT_CATEGORIES, DOCUMENT_CATEGORY_LABEL } from "@/types";
+import { DOCUMENT_CATEGORIES, DOCUMENT_CATEGORY_LABEL, AREA_LABEL } from "@/types";
 import type { Area, DocumentCategory } from "@/types";
 
 type DocumentFormDocument = {
@@ -95,7 +95,7 @@ export function DocumentFormDialog({
           <DialogDescription>
             {isEdit
               ? "Update the details of this document."
-              : `Track a ${area === "BUSINESS" ? "business" : "personal"} document and its expiry.`}
+              : `Track a ${AREA_LABEL[area].toLowerCase()} document and its expiry.`}
           </DialogDescription>
         </DialogHeader>
 

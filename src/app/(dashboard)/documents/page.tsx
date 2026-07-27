@@ -8,6 +8,7 @@ import { getCurrentArea } from "@/lib/area";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getExpiryStatus } from "@/lib/documents";
+import { AREA_LABEL } from "@/types";
 
 const STATUS_RANK = { expired: 0, expiring: 1, none: 2, valid: 3 };
 
@@ -37,7 +38,7 @@ export default async function DocumentsPage() {
         <EmptyState
           icon={FileText}
           title="No documents yet"
-          description={`Add a ${area === "BUSINESS" ? "business" : "personal"} document like a license, passport, or insurance policy to keep its expiry date in view.`}
+          description={`Add a ${AREA_LABEL[area].toLowerCase()} document like a license, passport, or insurance policy to keep its expiry date in view.`}
           action={<DocumentFormDialog area={area} />}
         />
       ) : (

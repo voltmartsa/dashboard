@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createTask, updateTask } from "@/actions/tasks";
-import { PRIORITIES, TASK_STATUSES, PRIORITY_LABEL, STATUS_LABEL } from "@/types";
+import { PRIORITIES, TASK_STATUSES, PRIORITY_LABEL, STATUS_LABEL, AREA_LABEL } from "@/types";
 import type { Area, Priority, TaskStatus } from "@/types";
 
 type TaskFormTask = {
@@ -98,7 +98,7 @@ export function TaskFormDialog({
           <DialogDescription>
             {isEdit
               ? "Update the details of this task."
-              : `Add a task to your ${area === "BUSINESS" ? "Business" : "Personal"} list.`}
+              : `Add a task to your ${AREA_LABEL[area]} list.`}
           </DialogDescription>
         </DialogHeader>
 

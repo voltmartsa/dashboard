@@ -46,3 +46,6 @@ next-env.d.ts
 /dev.db
 /dev.db-journal
 
+# scratch credential files - never commit
+scratch-*.json
+

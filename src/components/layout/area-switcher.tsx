@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { setAreaAction } from "@/actions/area";
 import { cn } from "@/lib/utils";
+import { AREA_LABEL } from "@/types";
 import type { Area } from "@/types";
 
 export function AreaSwitcher({ area }: { area: Area }) {
@@ -30,7 +31,7 @@ export function AreaSwitcher({ area }: { area: Area }) {
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {option === "BUSINESS" ? "Business" : "Personal"}
+          {AREA_LABEL[option]}
         </button>
       ))}
     </div>

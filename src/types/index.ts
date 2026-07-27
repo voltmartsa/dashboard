@@ -1,6 +1,13 @@
 export const AREAS = ["BUSINESS", "PERSONAL"] as const;
 export type Area = (typeof AREAS)[number];
 
+// "BUSINESS" is the stored/internal value everywhere (DB rows, cookies,
+// query params) — only the display label changed from "Business" to "Work".
+export const AREA_LABEL: Record<Area, string> = {
+  BUSINESS: "Work",
+  PERSONAL: "Personal",
+};
+
 export const USER_ROLES = ["SUPER_ADMIN", "USER"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 

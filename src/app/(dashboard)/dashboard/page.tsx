@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { lastNDaysUtc, isoDateFromUtcMidnight, todayUtcMidnight } from "@/lib/dates";
 import { computeStreak } from "@/lib/streak";
 import { cn } from "@/lib/utils";
-import { DOCUMENT_EXPIRY_WARNING_DAYS } from "@/types";
+import { DOCUMENT_EXPIRY_WARNING_DAYS, AREA_LABEL } from "@/types";
 
 const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
 
   const weekDelta = completedThisWeekCount - completedLastWeekCount;
 
-  const areaLabel = area === "BUSINESS" ? "business" : "personal";
+  const areaLabel = AREA_LABEL[area].toLowerCase();
 
   return (
     <>

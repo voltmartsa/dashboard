@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createProject, updateProject } from "@/actions/projects";
-import { PROJECT_STATUSES, PROJECT_STATUS_LABEL } from "@/types";
+import { PROJECT_STATUSES, PROJECT_STATUS_LABEL, AREA_LABEL } from "@/types";
 import type { Area, ProjectStatus } from "@/types";
 
 type ProjectFormProject = {
@@ -87,7 +87,7 @@ export function ProjectFormDialog({
           <DialogDescription>
             {isEdit
               ? "Update the details of this project."
-              : `Add a project to your ${area === "BUSINESS" ? "Business" : "Personal"} list.`}
+              : `Add a project to your ${AREA_LABEL[area]} list.`}
           </DialogDescription>
         </DialogHeader>
 

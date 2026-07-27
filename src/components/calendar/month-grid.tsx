@@ -1,14 +1,14 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { dayKey, isSameDay } from "@/lib/calendar";
+import { AREA_DOT_COLOR, type CalendarItem } from "./calendar-item";
+import { DayDetailDialog } from "./day-detail-dialog";
+import type { Area } from "@/types";
 
-export type CalendarItem = {
-  id: string;
-  title: string;
-  href: string;
-  kind: "task" | "project";
-  urgent?: boolean;
-};
+export type { CalendarItem };
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -16,12 +16,15 @@ export function MonthGrid({
   weeks,
   currentMonth,
   itemsByDay,
+  defaultArea,
 }: {
   weeks: Date[][];
   currentMonth: number;
   itemsByDay: Map<string, CalendarItem[]>;
+  defaultArea: Area;
 }) {
   const today = new Date();
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   return (
     <div className="rounded-[var(--radius-card)] border border-border bg-card overflow-hidden">
@@ -45,8 +48,17 @@ export function MonthGrid({
             return (
               <div
                 key={day.toISOString()}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedDay(day)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedDay(day);
+                  }
+                }}
                 className={cn(
-                  "min-h-[110px] border-b border-r border-border p-2 last:border-r-0",
+                  "min-h-[110px] border-b border-r border-border p-2 last:border-r-0 text-left hover:bg-black/[0.02] cursor-pointer",
                   !inMonth && "bg-black/[0.015]",
                 )}
               >
@@ -67,8 +79,9 @@ export function MonthGrid({
                     <Link
                       key={item.id}
                       href={item.href}
+                      onClick={(e) => e.stopPropagation()}
                       className={cn(
-                        "block truncate rounded-md px-1.5 py-1 text-[11px] font-medium hover:opacity-80",
+                        "flex items-center gap-1 truncate rounded-md px-1.5 py-1 text-[11px] font-medium hover:opacity-80",
                         item.kind === "project"
                           ? "bg-primary-soft text-primary"
                           : item.urgent
@@ -76,7 +89,12 @@ export function MonthGrid({
                             : "bg-black/[0.05] text-foreground",
                       )}
                     >
-                      {item.title}
+                      <span
+                        className="size-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: AREA_DOT_COLOR[item.area] }}
+                        aria-hidden
+                      />
+                      <span className="truncate">{item.title}</span>
                     </Link>
                   ))}
                   {items.length > 3 && (
@@ -90,6 +108,13 @@ export function MonthGrid({
           }),
         )}
       </div>
+
+      <DayDetailDialog
+        date={selectedDay}
+        items={selectedDay ? itemsByDay.get(dayKey(selectedDay)) ?? [] : []}
+        defaultArea={defaultArea}
+        onOpenChange={(open) => !open && setSelectedDay(null)}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { getCurrentArea } from "@/lib/area";
 import { requireUser } from "@/lib/auth";
 import { taskAccessWhere, projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
+import { AREA_LABEL } from "@/types";
 
 export default async function TasksPage({
   searchParams,
@@ -68,7 +69,7 @@ export default async function TasksPage({
         <EmptyState
           icon={ListChecks}
           title="No tasks yet"
-          description={`Add your first ${area === "BUSINESS" ? "business" : "personal"} task to get started.`}
+          description={`Add your first ${AREA_LABEL[area].toLowerCase()} task to get started.`}
           action={<TaskFormDialog area={area} projects={projects} />}
         />
       ) : (

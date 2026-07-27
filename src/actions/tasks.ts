@@ -213,4 +213,5 @@ export async function toggleTaskStatus(id: string) {
   revalidatePath(`/tasks/${id}`);
   revalidatePath("/dashboard");
   revalidatePath("/projects");
+  revalidatePath("/calendar");
 }

@@ -2,6 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { taskAccessWhere } from "@/lib/access";
 import { formatDueDate } from "@/lib/utils";
+import { AREA_LABEL } from "@/types";
+import type { Area } from "@/types";
 
 export type Digest = { subject: string; html: string; text: string };
 
@@ -11,7 +13,7 @@ function startOfToday() {
 }
 
 function areaLabel(area: string) {
-  return area === "BUSINESS" ? "Business" : "Personal";
+  return AREA_LABEL[area as Area] ?? area;
 }
 
 function renderTaskListHtml(tasks: { title: string; area: string; priority: string }[]) {

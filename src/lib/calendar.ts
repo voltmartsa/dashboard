@@ -49,3 +49,47 @@ export function isSameDay(a: Date, b: Date): boolean {
 export function dayKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
+
+const DATE_PARAM_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export function parseDateParam(value: string | undefined): Date {
+  const match = value ? DATE_PARAM_RE.exec(value) : null;
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+export function dateParam(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function startOfWeek(date: Date): Date {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  start.setDate(start.getDate() - start.getDay());
+  return start;
+}
+
+export function weekDays(anchor: Date): Date[] {
+  const start = startOfWeek(anchor);
+  const days: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(start);
+    day.setDate(day.getDate() + i);
+    days.push(day);
+  }
+  return days;
+}
+
+export function weekLabel(days: Date[]): string {
+  const start = days[0];
+  const end = days[days.length - 1];
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  const startFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(start);
+  const endFmt = sameMonth
+    ? new Intl.DateTimeFormat("en-US", { day: "numeric" }).format(end)
+    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(end);
+  const year = new Intl.DateTimeFormat("en-US", { year: "numeric" }).format(end);
+  return `${startFmt} – ${endFmt}, ${year}`;
+}

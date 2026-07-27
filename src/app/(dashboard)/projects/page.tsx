@@ -8,7 +8,7 @@ import { getCurrentArea } from "@/lib/area";
 import { requireUser } from "@/lib/auth";
 import { projectAccessWhere } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { PROJECT_STATUS_LABEL } from "@/types";
+import { PROJECT_STATUS_LABEL, AREA_LABEL } from "@/types";
 import type { ProjectStatus } from "@/types";
 
 export default async function ProjectsPage({
@@ -47,7 +47,7 @@ export default async function ProjectsPage({
         <EmptyState
           icon={FolderKanban}
           title="No projects yet"
-          description={`Create a ${area === "BUSINESS" ? "business" : "personal"} project to start grouping tasks together.`}
+          description={`Create a ${AREA_LABEL[area].toLowerCase()} project to start grouping tasks together.`}
           action={<ProjectFormDialog area={area} />}
         />
       ) : (
