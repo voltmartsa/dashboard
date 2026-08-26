@@ -13,6 +13,7 @@ import {
   Settings,
   Bell,
   FileText,
+  Gavel,
   LogOut,
   ShieldCheck,
 } from "lucide-react";
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/habits", label: "Habits", icon: Repeat },
   { href: "/documents", label: "Documents", icon: FileText },
+  { href: "/tenders", label: "Tenders", icon: Gavel },
   { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 

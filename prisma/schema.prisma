@@ -33,6 +33,8 @@ model User {
   weatherLocations       WeatherLocation[]
   notificationRecipients NotificationRecipient[]
   pushSubscriptions      PushSubscription[]
+  tenderRules            TenderRule[]
+  tenderMatches          TenderMatch[]
 }
 
 model Task {
@@ -259,4 +261,68 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Tender {
+  id            String    @id @default(cuid())
+  externalId    String    @unique // tender_No from eTenders (e.g. "GTLM/INFR01/2026/2027")
+  title         String // description field from eTenders
+  category      String?
+  province      String?
+  department    String?
+  tenderType    String?
+  publishedDate DateTime?
+  closingDate   DateTime?
+  briefingDate  DateTime?
+  briefingVenue String?
+  contactPerson String?
+  contactEmail  String?
+  contactPhone  String?
+  documents     Json? // [{ fileName, url }]
+  sourceUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches TenderMatch[]
+
+  @@index([closingDate])
+  @@index([category])
+  @@index([province])
+}
+
+model TenderRule {
+  id         String   @id @default(cuid())
+  label      String
+  keywords   String[] @default([]) // matched case-insensitively against title/category
+  categories String[] @default([]) // exact category names from eTenders, OR'd
+  provinces  String[] @default([]) // South African province names, OR'd
+  active     Boolean  @default(true)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  matches TenderMatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model TenderMatch {
+  id       String     @id @default(cuid())
+  tenderId String
+  tender   Tender     @relation(fields: [tenderId], references: [id], onDelete: Cascade)
+  ruleId   String
+  rule     TenderRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  notifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([tenderId, ruleId])
+  @@index([ownerId])
 }
