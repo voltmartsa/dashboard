@@ -84,23 +84,53 @@ function toDocuments(docs: EtendersDocument[] | null) {
   }));
 }
 
+// Vercel's serverless functions run from AWS datacenter IPs, which some
+// government-site WAFs treat differently from residential/browser traffic —
+// a realistic browser UA/Accept-Language plus a Referer matching the portal
+// avoids that class of block. A per-request timeout stops a hung request
+// from eating the whole function's time budget.
+const REQUEST_HEADERS = {
+  Accept: "application/json, text/plain, */*",
+  "Accept-Language": "en-ZA,en;q=0.9",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  Referer: "https://www.etenders.gov.za/Home/opportunities?id=1",
+};
+const REQUEST_TIMEOUT_MS = 20_000;
+
+async function fetchPage(start: number, length: number): Promise<EtendersResponse> {
+  const res = await fetch(buildListUrl(start, length), {
+    headers: REQUEST_HEADERS,
+    cache: "no-store",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    throw new Error(`eTenders list request failed: ${res.status} ${res.statusText}`);
+  }
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    const body = await res.text();
+    throw new Error(
+      `eTenders returned non-JSON response (content-type: ${contentType || "none"}): ${body.slice(0, 200)}`,
+    );
+  }
+  return (await res.json()) as EtendersResponse;
+}
+
 export async function fetchAdvertisedTenders(): Promise<EtendersTender[]> {
-  const all: EtendersTender[] = [];
-  let start = 0;
+  const first = await fetchPage(0, PAGE_SIZE);
+  const all: EtendersTender[] = [...first.data];
 
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const res = await fetch(buildListUrl(start, PAGE_SIZE), {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      throw new Error(`eTenders list request failed: ${res.status} ${res.statusText}`);
-    }
-    const json = (await res.json()) as EtendersResponse;
-    all.push(...json.data);
+  const remainingPages = Math.min(
+    Math.ceil(first.recordsTotal / PAGE_SIZE) - 1,
+    MAX_PAGES - 1,
+  );
 
-    start += PAGE_SIZE;
-    if (start >= json.recordsTotal || json.data.length === 0) break;
+  if (remainingPages > 0) {
+    const pages = await Promise.all(
+      Array.from({ length: remainingPages }, (_, i) => fetchPage((i + 1) * PAGE_SIZE, PAGE_SIZE)),
+    );
+    for (const page of pages) all.push(...page.data);
   }
 
   return all;

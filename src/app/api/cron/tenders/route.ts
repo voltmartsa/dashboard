@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await scrapeAndMatchTenders();
-  return NextResponse.json({ ok: true, ...result });
+  try {
+    const result = await scrapeAndMatchTenders();
+    return NextResponse.json({ ok: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[cron/tenders] scrape failed:", message);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
 }

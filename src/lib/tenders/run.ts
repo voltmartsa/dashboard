@@ -11,14 +11,38 @@ import { sendPushToUser } from "@/lib/notifications/push";
 // budget), so rows are batched into multi-row INSERT ... ON CONFLICT statements.
 const UPSERT_CHUNK_SIZE = 200;
 
+// Run a batch of chunk-processing promises with bounded concurrency, so
+// e.g. 10 DB round trips happen a few at a time instead of one huge
+// Promise.all (which can exhaust the DB connection pool) or a slow
+// fully-sequential loop.
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 async function upsertTendersBatch(rows: ReturnType<typeof mapTenderForUpsert>[]) {
-  const newTenders: { id: string; externalId: string }[] = [];
+  const chunks = chunk(rows, UPSERT_CHUNK_SIZE);
 
-  for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + UPSERT_CHUNK_SIZE);
-    if (chunk.length === 0) continue;
-
-    const valueRows = chunk.map(
+  const results = await mapWithConcurrency(chunks, 4, async (batch) => {
+    const valueRows = batch.map(
       (r) => Prisma.sql`(
         ${randomUUID()}, ${r.externalId}, ${r.title}, ${r.category}, ${r.province},
         ${r.department}, ${r.tenderType}, ${r.publishedDate}, ${r.closingDate}, ${r.briefingDate},
@@ -28,7 +52,7 @@ async function upsertTendersBatch(rows: ReturnType<typeof mapTenderForUpsert>[])
       )`,
     );
 
-    const result = await prisma.$queryRaw<{ id: string; externalId: string; isNew: boolean }[]>`
+    return prisma.$queryRaw<{ id: string; externalId: string; isNew: boolean }[]>`
       INSERT INTO "Tender" (
         id, "externalId", title, category, province,
         department, "tenderType", "publishedDate", "closingDate", "briefingDate",
@@ -54,12 +78,14 @@ async function upsertTendersBatch(rows: ReturnType<typeof mapTenderForUpsert>[])
         "updatedAt" = now()
       RETURNING id, "externalId", (xmax = 0) AS "isNew"
     `;
+  });
 
+  const newTenders: { id: string; externalId: string }[] = [];
+  for (const result of results) {
     for (const row of result) {
       if (row.isNew) newTenders.push({ id: row.id, externalId: row.externalId });
     }
   }
-
   return newTenders;
 }
 
@@ -77,24 +103,39 @@ export async function scrapeAndMatchTenders() {
       prisma.tender.findMany({ where: { id: { in: newTenders.map((t) => t.id) } } }),
     ]);
 
-    const ownerNewMatches = new Map<string, number>();
-
+    // These tenders were just inserted as brand-new rows, so no TenderMatch
+    // can already reference them — a plain batch insert (no per-pair upsert
+    // round trip) is safe and avoids an O(tenders * rules) sequential loop,
+    // which is what made the first production run (empty Tender table, so
+    // every scraped tender counted as "new") blow past the function's time budget.
+    const pairs: { tenderId: string; ruleId: string; ownerId: string | null }[] = [];
     for (const tender of tenders) {
       for (const rule of rules) {
-        if (!tenderMatchesRule(tender, rule)) continue;
-
-        const match = await prisma.tenderMatch.upsert({
-          where: { tenderId_ruleId: { tenderId: tender.id, ruleId: rule.id } },
-          create: { tenderId: tender.id, ruleId: rule.id, ownerId: rule.ownerId },
-          update: {},
-        });
-        if (match.notifiedAt) continue;
-
-        matchesCreated++;
-        if (rule.ownerId) {
-          ownerNewMatches.set(rule.ownerId, (ownerNewMatches.get(rule.ownerId) ?? 0) + 1);
+        if (tenderMatchesRule(tender, rule)) {
+          pairs.push({ tenderId: tender.id, ruleId: rule.id, ownerId: rule.ownerId });
         }
       }
+    }
+    matchesCreated = pairs.length;
+
+    const ownerNewMatches = new Map<string, number>();
+    for (const pair of pairs) {
+      if (pair.ownerId) {
+        ownerNewMatches.set(pair.ownerId, (ownerNewMatches.get(pair.ownerId) ?? 0) + 1);
+      }
+    }
+
+    if (pairs.length > 0) {
+      await mapWithConcurrency(chunk(pairs, UPSERT_CHUNK_SIZE), 4, async (batch) => {
+        const valueRows = batch.map(
+          (p) => Prisma.sql`(${randomUUID()}, ${p.tenderId}, ${p.ruleId}, ${p.ownerId}, now())`,
+        );
+        await prisma.$executeRaw`
+          INSERT INTO "TenderMatch" (id, "tenderId", "ruleId", "ownerId", "createdAt")
+          VALUES ${Prisma.join(valueRows)}
+          ON CONFLICT ("tenderId", "ruleId") DO NOTHING
+        `;
+      });
     }
 
     for (const [ownerId, count] of ownerNewMatches) {

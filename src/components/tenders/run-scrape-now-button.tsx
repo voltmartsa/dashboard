@@ -15,7 +15,9 @@ export function RunScrapeNowButton() {
       try {
         const result = await runTenderScrapeNow();
         setMessage(
-          `Scraped ${result.scraped} tenders, ${result.newTenders} new, ${result.matchesCreated} new matches.`,
+          result.ok
+            ? `Scraped ${result.scraped} tenders, ${result.newTenders} new, ${result.matchesCreated} new matches.`
+            : `Scrape failed: ${result.error}`,
         );
       } catch {
         setMessage("Scrape failed. Try again shortly.");

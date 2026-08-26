@@ -79,7 +79,15 @@ export async function deleteTenderRule(id: string) {
 
 export async function runTenderScrapeNow() {
   await requireUser();
-  const result = await scrapeAndMatchTenders();
-  revalidatePath("/tenders");
-  return result;
+
+  // Next.js redacts thrown Server Action errors in production, which would
+  // hide the real failure (e.g. eTenders blocking the request, a timeout) —
+  // return it as data instead so the UI can show what actually went wrong.
+  try {
+    const result = await scrapeAndMatchTenders();
+    revalidatePath("/tenders");
+    return { ok: true as const, ...result };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
+  }
 }

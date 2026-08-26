@@ -8,6 +8,12 @@ import { TenderRuleRow } from "@/components/tenders/tender-rule-row";
 import { RunScrapeNowButton } from "@/components/tenders/run-scrape-now-button";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isTenderStillOpen } from "@/lib/tenders/match";
+
+// The manual "Scrape now" button invokes runTenderScrapeNow, a Server
+// Action rendered from this page — it needs the same time budget as the
+// cron route for the same reason (pagination fetch + batch DB writes).
+export const maxDuration = 60;
 
 export default async function TendersPage() {
   const user = await requireUser();
@@ -36,8 +42,8 @@ export default async function TendersPage() {
       tenderMap.set(m.tender.id, { tender: m.tender, ruleLabels: [m.rule.label] });
     }
   }
-  const tenders = [...tenderMap.values()].filter(
-    ({ tender }) => !tender.closingDate || tender.closingDate.getTime() >= Date.now(),
+  const tenders = [...tenderMap.values()].filter(({ tender }) =>
+    isTenderStillOpen(tender.closingDate),
   );
 
   return (

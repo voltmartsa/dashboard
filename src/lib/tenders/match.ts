@@ -19,3 +19,7 @@ export function tenderMatchesRule(tender: Tender, rule: TenderRule): boolean {
   // requires at least one, but guard here too in case data comes in another way.
   return rule.keywords.length > 0 || rule.categories.length > 0 || rule.provinces.length > 0;
 }
+
+export function isTenderStillOpen(closingDate: Date | null): boolean {
+  return !closingDate || closingDate.getTime() >= Date.now();
+}
