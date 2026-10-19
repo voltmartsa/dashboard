@@ -1,5 +1,6 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
+import type { NormalizedTender } from "@/lib/tenders/sources/shared";
 
 // eTenders (National Treasury) exposes its "currently advertised" tender
 // list through the DataTables endpoint the portal's own UI calls — no
@@ -136,8 +137,9 @@ export async function fetchAdvertisedTenders(): Promise<EtendersTender[]> {
   return all;
 }
 
-export function mapTenderForUpsert(t: EtendersTender) {
+export function mapTenderForUpsert(t: EtendersTender): NormalizedTender {
   return {
+    source: "ETENDERS",
     externalId: t.tender_No.trim(),
     title: t.description,
     category: t.category,

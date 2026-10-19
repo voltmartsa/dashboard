@@ -265,12 +265,16 @@ model PushSubscription {
 
 model Tender {
   id            String    @id @default(cuid())
-  externalId    String    @unique // tender_No from eTenders (e.g. "GTLM/INFR01/2026/2027")
-  title         String // description field from eTenders
-  category      String?
+  // Which portal this row came from: "ETENDERS" | "GAUTENG_HEALTH" | "VHEMBE"
+  // (see TENDER_SOURCES in src/types/index.ts). externalId is only unique
+  // per-source — reference-number formats differ and could otherwise collide.
+  source        String    @default("ETENDERS")
+  externalId    String // tender/bid reference from the source portal (e.g. "GT/GDH/020/2026")
+  title         String // description / bid title from the source
+  category      String? // eTenders category list; null for other sources
   province      String?
   department    String?
-  tenderType    String?
+  tenderType    String? // e.g. "Open Tender", "RFQ", "Request for Proposal"
   publishedDate DateTime?
   closingDate   DateTime?
   briefingDate  DateTime?
@@ -286,9 +290,11 @@ model Tender {
 
   matches TenderMatch[]
 
+  @@unique([source, externalId])
   @@index([closingDate])
   @@index([category])
   @@index([province])
+  @@index([source])
 }
 
 model TenderRule {

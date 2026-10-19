@@ -50,7 +50,7 @@ export default async function TendersPage() {
     <>
       <PageHeader
         title="Tenders"
-        subtitle="Government tenders from eTenders that match your rules, scraped daily."
+        subtitle="Government tenders from the national eTenders portal, Gauteng Health, and Vhembe District Municipality that match your rules, scraped daily."
         actions={<RunScrapeNowButton />}
       />
 

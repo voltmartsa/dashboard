@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ListTree, Sparkles, Loader2 } from "lucide-react";
+import { ListTree, Sparkles } from "lucide-react";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import {
   Dialog,
   DialogContent,
@@ -96,10 +97,7 @@ export function SubtaskBreakdownDialog({ taskId }: { taskId: string }) {
         </DialogHeader>
 
         {isLoading && (
-          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Thinking through the steps...
-          </div>
+          <LoadingScreen fullscreen={false} className="py-10" label="Thinking through the steps..." />
         )}
 
         {error && <p className="text-sm text-danger">{error}</p>}

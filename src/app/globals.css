@@ -78,6 +78,31 @@ body {
 .prose-note a { color: var(--primary); text-decoration: underline; }
 .prose-note code { background: var(--primary-soft); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em; }
 .prose-note pre { background: var(--primary-soft); border-radius: 10px; padding: 0.8em 1em; overflow-x: auto; }
+
+/* Branded loading animation — a squash-and-stretch bounce on the logo mark
+   plus a contact shadow that widens/narrows in the opposite phase, used by
+   <LoadingScreen> (src/components/ui/loading-screen.tsx). */
+@keyframes squash-bounce {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  20% { transform: translateY(5px) scale(1.16, 0.78); }
+  45% { transform: translateY(-9px) scale(0.9, 1.14); }
+  70% { transform: translateY(0) scale(1.04, 0.96); }
+  88% { transform: translateY(0) scale(0.99, 1.01); }
+}
+
+@keyframes squash-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.4; }
+  20% { transform: scaleX(1.25); opacity: 0.5; }
+  45% { transform: scaleX(0.65); opacity: 0.22; }
+  70% { transform: scaleX(1.05); opacity: 0.36; }
+}
+
+.loading-mark { animation: squash-bounce 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.loading-shadow { animation: squash-shadow 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-mark, .loading-shadow { animation: none; }
+}
 .prose-note pre code { background: none; padding: 0; }
 .prose-note blockquote { border-left: 3px solid var(--border); padding-left: 0.9em; color: var(--muted-foreground); margin: 0.6em 0; }
 .prose-note strong { font-weight: 600; }

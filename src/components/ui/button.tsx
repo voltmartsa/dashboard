@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 type ButtonVariant = "primary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md";
@@ -22,13 +23,17 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  // Shows a spinner in place of the button's leading icon and disables it —
+  // pass the pending flag from useActionState/useTransition here.
+  loading?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size = "md", ...props }, ref) => {
+  ({ className, variant = "primary", size = "md", loading = false, disabled, children, ...props }, ref) => {
     return (
       <button
         ref={ref}
+        disabled={disabled || loading}
         className={cn(
           "inline-flex items-center justify-center rounded-full font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
           variantClasses[variant],
@@ -36,7 +41,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className,
         )}
         {...props}
-      />
+      >
+        {loading && <Spinner className="size-3.5" />}
+        {children}
+      </button>
     );
   },
 );

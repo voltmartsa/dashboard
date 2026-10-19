@@ -3,8 +3,28 @@ import { randomUUID } from "crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fetchAdvertisedTenders, mapTenderForUpsert } from "@/lib/tenders/scrape";
+import { fetchGautengHealthTenders } from "@/lib/tenders/sources/gauteng-health";
+import { fetchVhembeTenders } from "@/lib/tenders/sources/vhembe";
+import type { NormalizedTender } from "@/lib/tenders/sources/shared";
 import { tenderMatchesRule } from "@/lib/tenders/match";
 import { sendPushToUser } from "@/lib/notifications/push";
+
+type SourceStatus = "ok" | { error: string };
+
+// Run one source in isolation — a portal being down or blocking us must not
+// take the others down with it. Returns [] on failure and the reason as status.
+async function runSource(
+  label: string,
+  fn: () => Promise<NormalizedTender[]>,
+): Promise<{ rows: NormalizedTender[]; status: SourceStatus }> {
+  try {
+    return { rows: await fn(), status: "ok" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[tenders] source "${label}" failed:`, message);
+    return { rows: [], status: { error: message } };
+  }
+}
 
 // ~2000 currently-advertised tenders on eTenders — one upsert per row would be
 // thousands of round trips to the DB (too slow for the cron function's time
@@ -44,7 +64,7 @@ async function upsertTendersBatch(rows: ReturnType<typeof mapTenderForUpsert>[])
   const results = await mapWithConcurrency(chunks, 4, async (batch) => {
     const valueRows = batch.map(
       (r) => Prisma.sql`(
-        ${randomUUID()}, ${r.externalId}, ${r.title}, ${r.category}, ${r.province},
+        ${randomUUID()}, ${r.source}, ${r.externalId}, ${r.title}, ${r.category}, ${r.province},
         ${r.department}, ${r.tenderType}, ${r.publishedDate}, ${r.closingDate}, ${r.briefingDate},
         ${r.briefingVenue}, ${r.contactPerson}, ${r.contactEmail}, ${r.contactPhone},
         ${r.documents === Prisma.JsonNull ? Prisma.DbNull : JSON.stringify(r.documents)}::jsonb,
@@ -54,13 +74,13 @@ async function upsertTendersBatch(rows: ReturnType<typeof mapTenderForUpsert>[])
 
     return prisma.$queryRaw<{ id: string; externalId: string; isNew: boolean }[]>`
       INSERT INTO "Tender" (
-        id, "externalId", title, category, province,
+        id, source, "externalId", title, category, province,
         department, "tenderType", "publishedDate", "closingDate", "briefingDate",
         "briefingVenue", "contactPerson", "contactEmail", "contactPhone", documents,
         "sourceUrl", "createdAt", "updatedAt"
       )
       VALUES ${Prisma.join(valueRows)}
-      ON CONFLICT ("externalId") DO UPDATE SET
+      ON CONFLICT (source, "externalId") DO UPDATE SET
         title = EXCLUDED.title,
         category = EXCLUDED.category,
         province = EXCLUDED.province,
@@ -90,8 +110,25 @@ async function upsertTendersBatch(rows: ReturnType<typeof mapTenderForUpsert>[])
 }
 
 export async function scrapeAndMatchTenders() {
-  const raw = await fetchAdvertisedTenders();
-  const rows = raw.map(mapTenderForUpsert).filter((r) => r.externalId);
+  const [etenders, gautengHealth, vhembe] = await Promise.all([
+    runSource("etenders", async () => (await fetchAdvertisedTenders()).map(mapTenderForUpsert)),
+    runSource("gautengHealth", fetchGautengHealthTenders),
+    runSource("vhembe", fetchVhembeTenders),
+  ]);
+
+  const sources = {
+    etenders: etenders.status,
+    gautengHealth: gautengHealth.status,
+    vhembe: vhembe.status,
+  };
+
+  if (Object.values(sources).every((s) => s !== "ok")) {
+    throw new Error(`All tender sources failed: ${JSON.stringify(sources)}`);
+  }
+
+  const rows = [...etenders.rows, ...gautengHealth.rows, ...vhembe.rows].filter(
+    (r) => r.externalId,
+  );
   const newTenders = await upsertTendersBatch(rows);
 
   let matchesCreated = 0;
@@ -163,9 +200,10 @@ export async function scrapeAndMatchTenders() {
   }
 
   return {
-    scraped: raw.length,
+    scraped: rows.length,
     newTenders: newTenders.length,
     matchesCreated,
     notifiedOwners: notifiedOwners.size,
+    sources,
   };
 }

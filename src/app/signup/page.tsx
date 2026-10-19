@@ -32,7 +32,7 @@ export default function SignupPage() {
             required
           />
           {state?.error && <p className="text-sm text-danger">{state.error}</p>}
-          <Button type="submit" disabled={isPending} className="w-full">
+          <Button type="submit" loading={isPending} className="w-full">
             {isPending ? "Creating account..." : "Create account"}
           </Button>
         </form>

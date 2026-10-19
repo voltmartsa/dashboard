@@ -185,3 +185,20 @@ export const SA_PROVINCES = [
   "Western Cape",
 ] as const;
 export type SAProvince = (typeof SA_PROVINCES)[number];
+
+// Portals the daily scrape pulls from. Stored on Tender.source.
+export const TENDER_SOURCES = ["ETENDERS", "GAUTENG_HEALTH", "VHEMBE"] as const;
+export type TenderSource = (typeof TENDER_SOURCES)[number];
+
+export const TENDER_SOURCE_LABEL: Record<TenderSource, string> = {
+  ETENDERS: "eTenders",
+  GAUTENG_HEALTH: "Gauteng Health",
+  VHEMBE: "Vhembe",
+};
+
+// "View on …" link target per source.
+export const TENDER_SOURCE_SITE: Record<TenderSource, string> = {
+  ETENDERS: "eTenders",
+  GAUTENG_HEALTH: "Gauteng e-Tenders",
+  VHEMBE: "Vhembe DM",
+};

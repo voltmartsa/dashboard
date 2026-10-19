@@ -2,9 +2,11 @@ import { Download, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { TENDER_SOURCE_LABEL, TENDER_SOURCE_SITE, type TenderSource } from "@/types";
 
 export type TenderCardData = {
   id: string;
+  source: string;
   externalId: string;
   title: string;
   category: string | null;
@@ -17,6 +19,14 @@ export type TenderCardData = {
   documents: { fileName: string; url: string }[] | null;
   matchedRuleLabels: string[];
 };
+
+function sourceLabel(source: string): string {
+  return TENDER_SOURCE_LABEL[source as TenderSource] ?? source;
+}
+
+function sourceSite(source: string): string {
+  return TENDER_SOURCE_SITE[source as TenderSource] ?? "source";
+}
 
 function daysUntil(date: Date | null): number | null {
   if (!date) return null;
@@ -53,6 +63,9 @@ export function TenderCard({ tender }: { tender: TenderCardData }) {
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <span className="rounded-full bg-black/[0.05] px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          {sourceLabel(tender.source)}
+        </span>
         {tender.category && (
           <span className="rounded-full bg-black/[0.05] px-2 py-0.5 text-xs text-muted-foreground">
             {tender.category}
@@ -89,7 +102,7 @@ export function TenderCard({ tender }: { tender: TenderCardData }) {
             className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
           >
             <ExternalLink className="size-3.5" />
-            View on eTenders
+            View on {sourceSite(tender.source)}
           </a>
         )}
         {tender.documents?.map((doc) => (
