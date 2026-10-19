@@ -40,6 +40,10 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
   if (addresses.length === 0) throw new Error(`Couldn't find the website ${u.hostname}.`);
   if (addresses.some(isPrivateAddress)) throw new Error("Only public shop websites can be tracked.");
   u.hash = "";
+  // Links copied from ads carry tracking codes; keep only what identifies the product.
+  for (const key of [...u.searchParams.keys()]) {
+    if (/^(utm_|gad_|gclid$|gbraid$|wbraid$|fbclid$|msclkid$|srsltid$|country$|currency$)/i.test(key)) u.searchParams.delete(key);
+  }
   return u;
 }
 
