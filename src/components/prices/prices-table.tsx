@@ -51,7 +51,6 @@ function PriceCell({ link, myPrice }: { link: LinkData; myPrice: number | null }
     const pct = myPrice ? Math.round((Math.abs(diff) / myPrice) * 100) : 0;
     if (Math.abs(diff) < 0.005) delta = <Badge className="bg-black/[0.05] text-muted-foreground">Same price</Badge>;
     else if (diff < 0) delta = <Badge className="bg-red-50 text-danger">{formatRand(-diff)} cheaper ({pct}%)</Badge>;
-    else delta = <Badge className="bg-emerald-100 text-emerald-700">{formatRand(diff)} more (+{pct}%)</Badge>;
   }
 
   return (
@@ -219,7 +218,7 @@ export function PricesTable({ items }: { items: ItemData[] }) {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Prices are checked every morning. Red means a competitor sells it for less than you; green means you&apos;re cheaper.
+        Prices are checked every morning. Red shows where a competitor sells it for less than you.
       </p>
     </div>
   );
