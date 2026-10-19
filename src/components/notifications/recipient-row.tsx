@@ -12,6 +12,7 @@ export type RecipientRowData = {
   whatsapp: string | null;
   dailyDigest: boolean;
   weeklyDigest: boolean;
+  priceReport: boolean;
 };
 
 export function RecipientRow({ recipient }: { recipient: RecipientRowData }) {
@@ -64,6 +65,15 @@ export function RecipientRow({ recipient }: { recipient: RecipientRowData }) {
             startTransition(() => toggleRecipientField(recipient.id, "weeklyDigest"))
           }
         />
+        {recipient.email && (
+          <ToggleChip
+            label="Prices"
+            active={recipient.priceReport}
+            onClick={() =>
+              startTransition(() => toggleRecipientField(recipient.id, "priceReport"))
+            }
+          />
+        )}
 
         <button
           type="button"

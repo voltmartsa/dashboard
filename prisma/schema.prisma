@@ -35,6 +35,7 @@ model User {
   pushSubscriptions      PushSubscription[]
   tenderRules            TenderRule[]
   tenderMatches          TenderMatch[]
+  priceItems             PriceItem[]
 }
 
 model Task {
@@ -212,6 +213,7 @@ model NotificationRecipient {
   whatsapp     String? // E.164, e.g. +15551234567
   dailyDigest  Boolean  @default(true)
   weeklyDigest Boolean  @default(true)
+  priceReport  Boolean  @default(false) // morning competitor price comparison email
   active       Boolean  @default(true)
 
   ownerId String?
@@ -331,4 +333,56 @@ model TenderMatch {
 
   @@unique([tenderId, ruleId])
   @@index([ownerId])
+}
+
+// Price compare: one PriceItem per product the user tracks, with a link to their
+// own product page (isMine) plus links to the same product on competitor sites.
+model PriceItem {
+  id   String @id @default(cuid())
+  name String
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  links PriceLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model PriceLink {
+  id     String    @id @default(cuid())
+  itemId String
+  item   PriceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  url    String
+  isMine Boolean   @default(false)
+
+  // Latest check. price is null until the first successful read; error holds
+  // the reason the most recent check failed (the last good price is kept).
+  price        Float?
+  regularPrice Float?
+  title        String?
+  inStock      Boolean?
+  error        String?
+  checkedAt    DateTime?
+
+  points PricePoint[]
+
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@index([checkedAt])
+}
+
+// One price per link per day, for trends and "changed since yesterday".
+model PricePoint {
+  id     String    @id @default(cuid())
+  linkId String
+  link   PriceLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  day    String // YYYY-MM-DD (Africa/Johannesburg)
+  price  Float
+
+  @@unique([linkId, day])
 }

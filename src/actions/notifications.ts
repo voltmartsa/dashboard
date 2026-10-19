@@ -14,6 +14,7 @@ const RecipientInputSchema = z
     whatsapp: z.string().trim().optional(),
     dailyDigest: z.boolean().default(true),
     weeklyDigest: z.boolean().default(true),
+    priceReport: z.boolean().default(false),
   })
   .refine((data) => data.email || data.whatsapp, {
     message: "Enter an email address or a WhatsApp number.",
@@ -30,6 +31,7 @@ export async function createRecipient(input: z.infer<typeof RecipientInputSchema
       whatsapp: data.whatsapp || null,
       dailyDigest: data.dailyDigest,
       weeklyDigest: data.weeklyDigest,
+      priceReport: data.priceReport,
       ownerId: user.id,
     },
   });
@@ -45,7 +47,7 @@ export async function deleteRecipient(id: string) {
 
 export async function toggleRecipientField(
   id: string,
-  field: "dailyDigest" | "weeklyDigest" | "active",
+  field: "dailyDigest" | "weeklyDigest" | "priceReport" | "active",
 ) {
   const user = await requireUser();
   const recipient = await prisma.notificationRecipient.findFirstOrThrow({

@@ -14,6 +14,7 @@ import {
   Bell,
   FileText,
   Gavel,
+  Tags,
   LogOut,
   ShieldCheck,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { href: "/habits", label: "Habits", icon: Repeat },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/tenders", label: "Tenders", icon: Gavel },
+  { href: "/prices", label: "Prices", icon: Tags },
   { href: "/notifications", label: "Notifications", icon: Bell },
 ];
 

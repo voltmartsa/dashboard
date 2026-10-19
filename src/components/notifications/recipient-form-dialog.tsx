@@ -28,6 +28,7 @@ export function RecipientFormDialog() {
       whatsapp: String(formData.get("whatsapp") || ""),
       dailyDigest: formData.get("dailyDigest") === "on",
       weeklyDigest: formData.get("weeklyDigest") === "on",
+      priceReport: formData.get("priceReport") === "on",
     };
 
     if (!payload.email && !payload.whatsapp) {
@@ -95,6 +96,10 @@ export function RecipientFormDialog() {
             <label className="flex items-center gap-2.5 cursor-pointer">
               <Checkbox name="weeklyDigest" defaultChecked />
               <span className="text-sm text-foreground">Weekly summary</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <Checkbox name="priceReport" />
+              <span className="text-sm text-foreground">Morning competitor price report (email)</span>
             </label>
           </div>
 

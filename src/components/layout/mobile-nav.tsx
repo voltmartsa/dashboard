@@ -14,6 +14,7 @@ import {
   Bell,
   FileText,
   Gavel,
+  Tags,
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const NAV_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/habits", label: "Habits", icon: Repeat },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/tenders", label: "Tenders", icon: Gavel },
+  { href: "/prices", label: "Prices", icon: Tags },
   { href: "/notifications", label: "Alerts", icon: Bell },
 ];
 
