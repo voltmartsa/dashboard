@@ -36,7 +36,7 @@ function Sparkline({ history }: { history: LinkData["history"] }) {
   );
 }
 
-function PriceCell({ link, myPrice }: { link: LinkData; myPrice: number | null }) {
+function PriceCell({ link }: { link: LinkData }) {
   if (link.price == null && !link.error) return <span className="text-muted-foreground">Checking…</span>;
   if (link.price == null)
     return (
@@ -45,20 +45,11 @@ function PriceCell({ link, myPrice }: { link: LinkData; myPrice: number | null }
       </a>
     );
 
-  let delta: React.ReactNode = null;
-  if (myPrice != null && !link.isMine) {
-    const diff = link.price - myPrice;
-    const pct = myPrice ? Math.round((Math.abs(diff) / myPrice) * 100) : 0;
-    if (Math.abs(diff) < 0.005) delta = <Badge className="bg-black/[0.05] text-muted-foreground">Same price</Badge>;
-    else if (diff < 0) delta = <Badge className="bg-red-50 text-danger">{formatRand(-diff)} cheaper ({pct}%)</Badge>;
-  }
-
   return (
     <div className="flex flex-col items-end gap-1">
       <a href={link.url} target="_blank" rel="noopener noreferrer" className="font-semibold whitespace-nowrap hover:underline">
         {formatRand(link.price)}
       </a>
-      {delta}
       {link.inStock === false && <span className="text-[11px] text-warning">Out of stock</span>}
       {link.error && <span className="text-[11px] text-warning" title={link.error}>Last check failed</span>}
       <Sparkline history={link.history} />
@@ -181,7 +172,7 @@ export function PricesTable({ items }: { items: ItemData[] }) {
                     {a.competitors.length} competitor link{a.competitors.length === 1 ? "" : "s"}
                   </p>
                 </td>
-                <td className="px-4 py-3 text-right">{a.mine ? <PriceCell link={a.mine} myPrice={null} /> : "–"}</td>
+                <td className="px-4 py-3 text-right">{a.mine ? <PriceCell link={a.mine} /> : "–"}</td>
                 {stores.map((s) => {
                   const links = a.competitors.filter((c) => c.store === s);
                   return (
@@ -191,7 +182,7 @@ export function PricesTable({ items }: { items: ItemData[] }) {
                       ) : (
                         <div className="flex flex-col gap-3">
                           {links.map((l) => (
-                            <PriceCell key={l.id} link={l} myPrice={a.myPrice} />
+                            <PriceCell key={l.id} link={l} />
                           ))}
                         </div>
                       )}
@@ -218,7 +209,7 @@ export function PricesTable({ items }: { items: ItemData[] }) {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Prices are checked every morning. Red shows where a competitor sells it for less than you.
+        Prices are checked every morning.
       </p>
     </div>
   );
