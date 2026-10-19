@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 type Preview = { state: "idle" } | { state: "loading" } | { state: "ok"; text: string } | { state: "error"; text: string };
 
-export type PriceItemFormItem = { id: string; name: string; mine: string; competitors: string[] };
+export type PriceItemFormItem = { id: string; name: string; costPrice: number | null; mine: string; competitors: string[] };
 
 function PreviewLine({ preview }: { preview: Preview }) {
   if (preview.state === "idle") return null;
@@ -44,12 +44,14 @@ export function PriceItemFormDialog({ item, trigger }: { item?: PriceItemFormIte
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(item?.name ?? "");
   const [mine, setMine] = useState(item?.mine ?? "");
+  const [cost, setCost] = useState(item?.costPrice != null ? String(item.costPrice) : "");
   const [competitors, setCompetitors] = useState<string[]>(item?.competitors.length ? item.competitors : [""]);
   const [previews, setPreviews] = useState<Record<string, Preview>>({});
 
   function reset() {
     setName(item?.name ?? "");
     setMine(item?.mine ?? "");
+    setCost(item?.costPrice != null ? String(item.costPrice) : "");
     setCompetitors(item?.competitors.length ? item.competitors : [""]);
     setPreviews({});
     setError(null);
@@ -69,7 +71,13 @@ export function PriceItemFormDialog({ item, trigger }: { item?: PriceItemFormIte
   }
 
   function handleSubmit() {
-    const payload = { name, mine, competitors: competitors.filter((c) => c.trim()) };
+    const costText = cost.trim().replace(/^R\s*/i, "").replace(/\s/g, "").replace(",", ".");
+    const costPrice = costText ? Number(costText) : null;
+    if (costPrice != null && (Number.isNaN(costPrice) || costPrice < 0)) {
+      setError("Enter the cost price as a number, e.g. 250.00");
+      return;
+    }
+    const payload = { name, mine, costPrice, competitors: competitors.filter((c) => c.trim()) };
     setError(null);
     startTransition(async () => {
       const result = isEdit && item ? await updatePriceItem(item.id, payload) : await createPriceItem(payload);
@@ -127,6 +135,20 @@ export function PriceItemFormDialog({ item, trigger }: { item?: PriceItemFormIte
               Name
             </label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Filled in from your product" />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground" htmlFor="cost">
+              Your cost price
+            </label>
+            <Input
+              id="cost"
+              inputMode="decimal"
+              value={cost}
+              onChange={(e) => setCost(e.target.value)}
+              placeholder="e.g. 250.00 (optional)"
+            />
+            <p className="text-xs text-muted-foreground">What you pay for it. Only you can see this.</p>
           </div>
 
           <div className="flex flex-col gap-1.5">

@@ -338,8 +338,9 @@ model TenderMatch {
 // Price compare: one PriceItem per product the user tracks, with a link to their
 // own product page (isMine) plus links to the same product on competitor sites.
 model PriceItem {
-  id   String @id @default(cuid())
-  name String
+  id        String @id @default(cuid())
+  name      String
+  costPrice Float? // what the user pays for the product, entered by hand
 
   ownerId String?
   owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)

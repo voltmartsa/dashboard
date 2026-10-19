@@ -23,6 +23,7 @@ export async function loadPriceItems(ownerId: string): Promise<ItemData[]> {
   return items.map((i) => ({
     id: i.id,
     name: i.name,
+    costPrice: i.costPrice,
     links: i.links.map(({ points, ...l }) => ({
       ...l,
       history: points.reverse().map((p) => ({ day: p.day, price: p.price })),

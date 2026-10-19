@@ -71,7 +71,7 @@ function RowActions({ item, mine, competitors }: { item: ItemData; mine: string;
         <RefreshCw className={cn("size-3.5", isPending && "animate-spin")} />
       </button>
       <PriceItemFormDialog
-        item={{ id: item.id, name: item.name, mine, competitors }}
+        item={{ id: item.id, name: item.name, costPrice: item.costPrice, mine, competitors }}
         trigger={
           <button type="button" className="rounded-lg p-1.5 text-muted-foreground hover:bg-black/[0.05] hover:text-foreground cursor-pointer" aria-label="Edit product">
             <Pencil className="size-3.5" />
@@ -144,6 +144,7 @@ export function PricesTable({ items }: { items: ItemData[] }) {
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground">
               <th className="px-4 py-3 font-medium">Product</th>
+              <th className="px-4 py-3 text-right font-medium">Cost</th>
               <th className="px-4 py-3 text-right font-medium">You</th>
               {stores.map((s) => (
                 <th key={s} className="px-4 py-3 text-right font-medium">
@@ -157,7 +158,7 @@ export function PricesTable({ items }: { items: ItemData[] }) {
           <tbody>
             {shown.length === 0 && (
               <tr>
-                <td colSpan={stores.length + 4} className="px-4 py-10 text-center text-muted-foreground">
+                <td colSpan={stores.length + 5} className="px-4 py-10 text-center text-muted-foreground">
                   Nothing matches this filter.
                 </td>
               </tr>
@@ -171,6 +172,9 @@ export function PricesTable({ items }: { items: ItemData[] }) {
                   <p className="text-xs text-muted-foreground">
                     {a.competitors.length} competitor link{a.competitors.length === 1 ? "" : "s"}
                   </p>
+                </td>
+                <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
+                  {item.costPrice != null ? formatRand(item.costPrice) : <span className="font-normal text-muted-foreground">–</span>}
                 </td>
                 <td className="px-4 py-3 text-right">{a.mine ? <PriceCell link={a.mine} /> : "–"}</td>
                 {stores.map((s) => {

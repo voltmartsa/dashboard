@@ -15,7 +15,7 @@ export type LinkData = {
   history: { day: string; price: number }[];
 };
 
-export type ItemData = { id: string; name: string; links: LinkData[] };
+export type ItemData = { id: string; name: string; costPrice: number | null; links: LinkData[] };
 
 export type ItemAnalysis = {
   name: string;

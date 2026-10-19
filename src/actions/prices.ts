@@ -12,6 +12,7 @@ const PriceItemInputSchema = z.object({
   name: z.string().trim().default(""),
   mine: z.string().trim().min(1, "Your product link is required"),
   competitors: z.array(z.string().trim()).default([]),
+  costPrice: z.number().nonnegative("Cost price can't be negative").nullable().default(null),
 });
 
 async function normalise(input: z.input<typeof PriceItemInputSchema>) {
@@ -22,7 +23,7 @@ async function normalise(input: z.input<typeof PriceItemInputSchema>) {
     const url = (await assertPublicUrl(c)).toString();
     if (url !== mine && !competitors.includes(url)) competitors.push(url);
   }
-  return { name: data.name, mine, competitors };
+  return { name: data.name, mine, competitors, costPrice: data.costPrice };
 }
 
 // Next.js redacts thrown Server Action errors in production, so validation
@@ -37,6 +38,7 @@ export async function createPriceItem(input: z.input<typeof PriceItemInputSchema
     const item = await prisma.priceItem.create({
       data: {
         name: data.name,
+        costPrice: data.costPrice,
         ownerId: user.id,
         links: {
           create: [{ url: data.mine, isMine: true }, ...data.competitors.map((url) => ({ url }))],
@@ -62,7 +64,7 @@ export async function updatePriceItem(id: string, input: z.input<typeof PriceIte
     const toDelete = item.links.filter((l) => !wanted.has(l.url)).map((l) => l.id);
     const existing = new Map(item.links.map((l) => [l.url, l]));
     await prisma.$transaction([
-      prisma.priceItem.update({ where: { id }, data: { name: data.name } }),
+      prisma.priceItem.update({ where: { id }, data: { name: data.name, costPrice: data.costPrice } }),
       prisma.priceLink.deleteMany({ where: { id: { in: toDelete } } }),
       ...[...wanted].map(([url, isMine]) =>
         existing.has(url)
